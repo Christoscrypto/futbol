@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perfil del Jugador — DIMA CUP 2025</title>
+  <link rel="stylesheet" href="css/global.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .player-hero {
+      min-height: 340px; position: relative; overflow: hidden;
+      display: flex; align-items: flex-end; padding-bottom: 48px;
+      background: linear-gradient(135deg, var(--navy-mid), var(--navy));
+    }
+    .player-hero::before {
+      content:''; position:absolute; inset:0;
+      background: radial-gradient(ellipse at 30% 60%, rgba(255,255,255,0.2) 0%, transparent 60%);
+    }
+    .player-hero .stripe {
+      position:absolute; top:0; right:0; bottom:0; width:40%;
+      clip-path: polygon(15% 0,100% 0,100% 100%,0 100%);
+      background: linear-gradient(135deg, rgba(212,212,212,0.08), rgba(255,255,255,0.06));
+    }
+    .big-avatar {
+      font-size: 8rem; line-height: 1;
+      width: 180px; height: 180px;
+      background: var(--navy-card);
+      border: 3px solid rgba(212,212,212,0.3);
+      border-radius: var(--radius-lg);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      box-shadow: var(--shadow-glow);
+    }
+    .stat-ring { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .stat-ring .val { font-family: var(--font-display); font-size: 2.5rem; letter-spacing: 2px; color: var(--gold); }
+    .stat-ring .lbl { font-size: 0.6rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--gray); }
+
+    .hero-avatar-wrap { position: relative; flex-shrink: 0; }
+    .hero-crest-badge {
+      position: absolute; bottom: -6px; right: -6px; z-index: 2;
+      width: 52px; height: 52px; border-radius: 50%;
+      background: var(--navy-card); border: 3px solid var(--navy);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+    }
+    .hero-number-ghost {
+      position: absolute; top: -34px; left: -4px; z-index: 0;
+      font-family: var(--font-display); font-size: 7.5rem; line-height: 1;
+      color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,0.12);
+      pointer-events: none; user-select: none; white-space: nowrap;
+    }
+    .meta-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--navy-card); border: 1px solid var(--glass-border);
+      border-radius: 20px; padding: 5px 14px; font-size: 0.75rem; color: var(--white);
+    }
+
+    @media (max-width: 768px) {
+      .player-hero { min-height: auto; padding: 32px 0 24px; align-items: center; }
+      .player-hero-row { flex-direction: column; align-items: center; text-align: center; gap: 18px; }
+      .player-hero-info { flex: none; }
+      #statsRow { justify-content: center; gap: 28px; }
+    }
+    @media (max-width: 640px) {
+      .player-hero { padding: 28px 0 20px; }
+      .big-avatar { width: 110px; height: 110px; font-size: 4rem; }
+      .hero-crest-badge { width: 38px; height: 38px; font-size: 1.2rem; }
+      .hero-number-ghost { display: none; }
+      #detailStats { grid-template-columns: repeat(auto-fill, minmax(130px,1fr)) !important; }
+    }
+    @media (max-width: 420px) {
+      .big-avatar { width: 90px; height: 90px; font-size: 3.2rem; }
+      #statsRow { gap: 16px; }
+      .stat-ring .val { font-size: 2rem; }
+      #playerMatches > div { flex-wrap: wrap; gap: 8px !important; padding: 12px 14px !important; }
+      #playerMatches .badge { margin-left: auto; }
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+
+  <div class="player-hero">
+    <div class="stripe"></div>
+    <div class="container">
+      <div class="breadcrumb" style="margin-bottom:16px;">
+        <a href="index.html">Inicio</a> / <a href="jugadores.html">Jugadores</a> / <span id="heroName">Cargando...</span>
+      </div>
+      <div class="player-hero-row" style="display:flex;align-items:flex-end;gap:32px;flex-wrap:wrap;position:relative;z-index:1;">
+        <div class="hero-avatar-wrap">
+          <div class="big-avatar" id="bigAvatar">⚽</div>
+          <div class="hero-crest-badge" id="heroCrestBadge"></div>
+        </div>
+        <div class="player-hero-info" style="flex:1;position:relative;">
+          <div class="hero-number-ghost" id="heroNumberGhost"></div>
+          <div id="playerPos" style="position:relative;font-size:0.7rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--electric);margin-bottom:8px;"></div>
+          <div id="playerName" style="position:relative;font-family:var(--font-display);font-size:clamp(2.5rem,6vw,5rem);letter-spacing:4px;color:var(--white);line-height:1;"></div>
+          <div id="playerMeta" style="position:relative;display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;"></div>
+        </div>
+        <div id="statsRow" style="display:flex;gap:32px;flex-wrap:wrap;"></div>
+      </div>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container">
+      <div style="display:grid;grid-template-columns:1fr 340px;gap:40px;align-items:start;" class="player-layout">
+
+        <!-- Left: Bio + Matches -->
+        <div>
+          <div class="section-header">
+            <div class="accent-bar"></div>
+            <h2>Estadísticas Detalladas</h2>
+          </div>
+          <div id="detailStats" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:48px;"></div>
+
+          <div class="section-header">
+            <div class="accent-bar"></div>
+            <h2>Historial de Partidos</h2>
+          </div>
+          <div id="playerMatches" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+
+        <!-- Right: Info personal + Bio -->
+        <div>
+          <div class="card" style="padding:24px;margin-bottom:24px;">
+            <div style="font-size:0.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin-bottom:16px;">Información personal</div>
+            <div id="infoPersonal" style="display:flex;flex-direction:column;gap:12px;"></div>
+          </div>
+          <div class="card" style="padding:24px;">
+            <div style="font-size:0.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin-bottom:16px;">Biografía</div>
+            <div id="bio" style="font-size:0.85rem;color:var(--gray);line-height:1.8;"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+</div>
+<script src="js/shared.js"></script>
+<script>
+function calcEdad(fechaNacimiento) {
+  if (!fechaNacimiento) return null;
+  const nac = new Date(fechaNacimiento);
+  if (isNaN(nac)) return null;
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - nac.getFullYear();
+  const m = hoy.getMonth() - nac.getMonth();
+  if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
+  return edad;
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await DC.ready;
+  const id = parseInt(new URLSearchParams(window.location.search).get('id')) || 1;
+  const p = DC.getPlayer(id);
+  if (!p) { document.getElementById('playerName').textContent = 'Jugador no encontrado'; return; }
+
+  const team = DC.getTeam(p.team);
+  document.title = `${p.name} — DIMA CUP 2025`;
+
+  document.getElementById('heroName').textContent = p.name;
+  document.getElementById('bigAvatar').innerHTML = DC.avatar(p, 'fill');
+  document.getElementById('heroCrestBadge').innerHTML = DC.crest(team, 'fill');
+  document.getElementById('heroNumberGhost').textContent = p.num ? `#${p.num}` : '';
+  document.getElementById('playerPos').textContent = p.pos;
+  document.getElementById('playerName').textContent = p.name;
+  const edad = calcEdad(p.nacimiento);
+  document.getElementById('playerMeta').innerHTML = [
+    p.num ? `<span class="meta-chip">🎽 #${p.num}</span>` : '',
+    `<span class="meta-chip">${DC.crest(team, 16)} ${team.name}</span>`,
+    p.nacionalidad ? `<span class="meta-chip">${p.nacionalidad}</span>` : '',
+    edad ? `<span class="meta-chip">${edad} años</span>` : '',
+  ].filter(Boolean).join('');
+
+  // Stats row
+  document.getElementById('statsRow').innerHTML = [
+    ['Goles', p.goles, '⚽'],
+    ['Asistencias', p.asist, '🎯'],
+    
+  ].map(([l,v,ic]) => `
+    <div class="stat-ring">
+      <div style="font-size:1.5rem;">${ic}</div>
+      <div class="val">${v}</div>
+      <div class="lbl">${l}</div>
+    </div>`).join('');
+
+  // Detail stats
+  document.getElementById('detailStats').innerHTML = [
+    ['Goles', p.goles, '⚽'],
+    ['Asistencias', p.asist, '🎯'],
+    ['Tarjetas Amarillas', p.amarillas, '🟨'],
+    ['Tarjetas Rojas', p.rojas, '🟥'],
+   
+  ].map(([l,v,ic]) => `
+    <div class="stat-box">
+      <div style="font-size:1.5rem;margin-bottom:8px;">${ic}</div>
+      <div class="stat-num">${v}</div>
+      <div class="stat-label">${l}</div>
+    </div>`).join('');
+
+  // Info personal
+  const fechaFormatted = (() => {
+    if (!p.nacimiento) return null;
+    try {
+      const [y, mo, d] = p.nacimiento.split('-');
+      return new Date(y, mo - 1, d).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+    } catch { return p.nacimiento; }
+  })();
+  const infoRows = [
+    ['🎂', 'Nacimiento', fechaFormatted ? `${fechaFormatted}${edad ? ' · ' + edad + ' años' : ''}` : null],
+    ['🌎', 'Nacionalidad', p.nacionalidad || null],
+    ['📏', 'Altura', p.altura ? `${p.altura} cm` : null],
+    ['🦶', 'Pie dominante', p.pie || null],
+  ].filter(([,,v]) => v);
+  document.getElementById('infoPersonal').innerHTML = infoRows.length ? infoRows.map(([ic,l,v]) => `
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="font-size:1.1rem;">${ic}</span>
+      <div>
+        <div style="font-size:0.6rem;color:var(--gray);text-transform:uppercase;letter-spacing:1px;">${l}</div>
+        <div style="font-size:0.85rem;color:var(--white);font-weight:600;">${v}</div>
+      </div>
+    </div>`).join('') : '<p style="color:var(--gray);font-size:0.8rem;">Sin datos personales registrados.</p>';
+
+  // Bio
+  const bios = {
+    'Delantero': `Delantero habilidoso con gran instinto goleador. Se caracteriza por su velocidad, definición y capacidad de desequilibrio en el mano a mano. Uno de los atacantes más destacados del torneo.`,
+    'Mediocampista': `Centrocampista de gran visión de juego y técnica depurada. Domina el ritmo del partido con pases precisos y llegadas oportunas desde segunda línea.`,
+    'Defensa': `Defensa sólido y contundente en el juego aéreo. Líder de la línea defensiva, destaca por su lectura del juego y su capacidad para anticiparse al rival.`,
+    'Portero': `Portero de reflejos extraordinarios y gran presencia bajo los tres palos. Seguridad absoluta en su área y excelente en el juego con los pies.`,
+  };
+  document.getElementById('bio').textContent = p.bio || bios[p.pos] || 'Información no disponible.';
+
+  // Player matches
+  const matches = DC.getTeamMatches(p.team).slice(-5).reverse();
+  document.getElementById('playerMatches').innerHTML = matches.map(m => {
+    const l = DC.getTeam(m.local), v = DC.getTeam(m.visit);
+    return `
+      <div style="display:flex;align-items:center;gap:16px;padding:14px 20px;background:var(--navy-card);border:1px solid var(--glass-border);border-radius:var(--radius-md);">
+        <div style="font-size:0.7rem;color:var(--gray);white-space:nowrap;">J${m.jornada}</div>
+        <div style="flex:1;display:flex;align-items:center;gap:8px;">
+          <span>${DC.crest(l, 20)}</span><span style="font-weight:700;font-size:0.85rem;color:var(--white);">${l.short}</span>
+          <span style="font-family:var(--font-display);font-size:0.9rem;color:var(--gray);">${m.estado==='Finalizado'?m.gL+' — '+m.gV:'VS'}</span>
+          <span style="font-weight:700;font-size:0.85rem;color:var(--white);">${v.short}</span><span>${DC.crest(v, 20)}</span>
+        </div>
+        <span class="badge badge-${m.estado==='Finalizado'?'finished':'scheduled'}">${m.estado}</span>
+      </div>`;
+  }).join('');
+
+  // Radar chart
+  // Generate pseudo-skills from stats
+  /*const skills = {
+    'Delantero':     { labels:['Gol','Velocidad','Regate','Remate','Físico','Posición'], data:[p.goles/15*100,82,78,85,75,88] },
+    'Mediocampista': { labels:['Pase','Visión','Remate','Defensa','Dribble','Físico'], data:[88,85,p.goles/15*80,65,75,78] },
+    'Defensa':       { labels:['Marca','Físico','Cabeza','Pase','Fuerza','Posición'], data:[88,82,85,70,90,87] },
+    'Portero':       { labels:['Reflejos','Físico','Pase','Colocación','Salida','Atajada'], data:[88,75,70,85,80,90] },
+  };
+  const sk = skills[p.pos] || skills['Delantero'];
+  const ctx = document.getElementById('radarChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: sk.labels,
+      datasets: [{
+        label: p.name, data: sk.data,
+        borderColor: '#FFFFFF', backgroundColor: 'rgba(255,255,255,0.15)',
+        pointBackgroundColor: '#D4D4D4', pointRadius: 4, borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        r: {
+          grid: { color: 'rgba(255,255,255,0.08)' },
+          angleLines: { color: 'rgba(255,255,255,0.08)' },
+          ticks: { color: '#999999', backdropColor: 'transparent', font: { size: 9 } },
+          pointLabels: { color: '#999999', font: { size: 11 } },
+          min: 0, max: 100,
+        }
+      }
+    }
+  }); */
+});
+</script>
+</body>
+</html>

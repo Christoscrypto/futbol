@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reglamento — DIMA CUP 2025</title>
+  <link rel="stylesheet" href="css/global.css">
+  <style>
+    .reg-nav {
+      position: sticky; top: calc(var(--nav-height) + 16px);
+      background: var(--navy-card); border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md); padding: 20px;
+    }
+    .reg-nav h4 { font-size: 0.65rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--gray); margin-bottom: 16px; }
+    .reg-nav a { display: block; padding: 8px 12px; color: var(--gray); text-decoration: none; font-size: 0.82rem; border-radius: var(--radius-sm); transition: all var(--transition); margin-bottom: 2px; }
+    .reg-nav a:hover { color: var(--electric); background: rgba(255,255,255,0.08); }
+    .reg-section { margin-bottom: 56px; scroll-margin-top: 100px; }
+    .reg-section h2 { font-family: var(--font-display); font-size: 2rem; letter-spacing: 3px; color: var(--white); margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
+    .reg-section h3 { font-size: 1rem; font-weight: 700; color: var(--white); margin: 20px 0 10px; }
+    .reg-section p, .reg-section li { color: var(--gray); font-size: 0.88rem; line-height: 1.9; }
+    .reg-section ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .reg-section ul li::before { content: '→'; color: var(--electric); margin-right: 10px; }
+    .rule-box { background: var(--navy-card); border: 1px solid var(--glass-border); border-left: 3px solid var(--electric); border-radius: var(--radius-sm); padding: 16px 20px; margin: 12px 0; }
+    .rule-box.warning { border-left-color: var(--gold); }
+    .rule-box.danger { border-left-color: var(--danger); }
+    @media (max-width: 768px) {
+      .reg-layout { grid-template-columns: 1fr !important; gap: 24px !important; }
+      .reg-nav { position: static; }
+    }
+    @media (max-width: 480px) {
+      .reg-section h2 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+  <div class="page-banner">
+    <div class="diagonal-stripe"></div>
+    <div class="container">
+      <div class="breadcrumb"><a href="index.html">Inicio</a> / Reglamento</div>
+      <h1>Reglamento</h1>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container">
+      <div class="reg-layout" style="display:grid;grid-template-columns:240px 1fr;gap:40px;align-items:start;">
+
+        <!-- Sidebar nav -->
+        <div class="reg-nav fade-up">
+          <h4>Contenido</h4>
+          <a href="#generalidades">1. Generalidades</a>
+          <a href="#inscripciones">2. Inscripciones</a>
+          <a href="#formato">3. Formato del torneo</a>
+          <a href="#jugadores">4. Jugadores</a>
+          <a href="#partidos">5. Partidos</a>
+          <a href="#disciplina">6. Disciplina</a>
+          <a href="#sanciones">7. Sanciones</a>
+          <a href="#premiacion">8. Premiación</a>
+        </div>
+
+        <!-- Content -->
+        <div>
+          <div class="reg-section fade-up" id="generalidades">
+            <h2><span>📋</span> 1. Generalidades</h2>
+            <p>El torneo DIMA CUP es una competencia de fútbol 11 organizada en la ciudad de Durango, México. Tiene como objetivo promover el deporte, la convivencia y el fair play entre los equipos participantes.</p>
+            <div class="rule-box" style="margin-top:16px;">
+              <strong style="color:var(--white);font-size:0.85rem;">Edición 2025</strong>
+              <p style="margin-top:6px;">El torneo se lleva a cabo del 1 de febrero al 30 de agosto de 2025, en las instalaciones deportivas del municipio de Durango.</p>
+            </div>
+          </div>
+
+          <div class="reg-section fade-up" id="inscripciones">
+            <h2><span>📝</span> 2. Inscripciones</h2>
+            <ul>
+              <li>Cada equipo deberá presentar un mínimo de 14 jugadores y un máximo de 22.</li>
+              <li>La cuota de inscripción será determinada por la organización antes del inicio del torneo.</li>
+              <li>Todos los jugadores deberán presentar identificación oficial vigente.</li>
+              <li>La fecha límite de inscripción es 7 días antes del inicio de la competencia.</li>
+              <li>No se permitirán altas de jugadores después de la Jornada 2.</li>
+            </ul>
+          </div>
+
+          <div class="reg-section fade-up" id="formato">
+            <h2><span>🏆</span> 3. Formato del torneo</h2>
+            <h3>Fase Regular</h3>
+            <p>Todos los equipos jugarán entre sí en formato de todos contra todos (liga). Se otorgan 3 puntos por victoria, 1 por empate y 0 por derrota.</p>
+            <h3>Criterios de desempate</h3>
+            <ul>
+              <li>Mayor diferencia de goles</li>
+              <li>Mayor cantidad de goles a favor</li>
+              <li>Resultado del partido entre los equipos empatados</li>
+              <li>Sorteo en caso de persistir el empate</li>
+            </ul>
+            <h3>Fase Final</h3>
+            <p>Los 4 mejores equipos de la fase regular avanzarán a semifinales. Las semifinales y final se jugarán en partidos únicos en campo neutral.</p>
+          </div>
+
+          <div class="reg-section fade-up" id="jugadores">
+            <h2><span>👕</span> 4. Jugadores</h2>
+            <ul>
+              <li>Edad mínima: 16 años. Para menores se requerirá autorización de padres o tutores.</li>
+              <li>Cada equipo podrá alinear hasta 11 jugadores por partido, con 5 suplentes disponibles.</li>
+              <li>Se permiten hasta 3 cambios por partido (un cuarto cambio en la prórroga).</li>
+              <li>Los jugadores extranjeros deberán presentar documentación migratoria en regla.</li>
+            </ul>
+            <div class="rule-box warning">
+              <strong style="color:var(--gold);font-size:0.85rem;">⚠ Jugadores no registrados</strong>
+              <p style="margin-top:6px;">La alineación de un jugador no registrado resultará en la derrota del partido por marcador de 3-0, independientemente del resultado.</p>
+            </div>
+          </div>
+
+          <div class="reg-section fade-up" id="partidos">
+            <h2><span>⚽</span> 5. Partidos</h2>
+            <ul>
+              <li>Duración: 2 tiempos de 45 minutos con 15 minutos de descanso.</li>
+              <li>Cada equipo deberá presentarse con mínimo 8 jugadores para iniciar el partido.</li>
+              <li>Tolerancia de 15 minutos sobre el horario establecido.</li>
+              <li>Pasada la tolerancia, el partido se dará por perdido 3-0 al equipo ausente.</li>
+              <li>El balón oficial del torneo lo proporcionará la organización.</li>
+            </ul>
+          </div>
+
+          <div class="reg-section fade-up" id="disciplina">
+            <h2><span>🟨</span> 6. Disciplina</h2>
+            <div class="rule-box warning">
+              <strong style="color:var(--gold);font-size:0.85rem;">Tarjeta Amarilla</strong>
+              <ul style="margin-top:8px;"><li>Acumulación de 3 tarjetas: suspensión de 1 partido.</li><li>Acumulación de 5 tarjetas: suspensión de 2 partidos.</li></ul>
+            </div>
+            <div class="rule-box danger" style="margin-top:12px;">
+              <strong style="color:var(--danger);font-size:0.85rem;">Tarjeta Roja</strong>
+              <ul style="margin-top:8px;"><li>Expulsión directa: suspensión mínima de 1 partido.</li><li>Agresión física: suspensión mínima de 3 partidos o definitiva.</li><li>El equipo no podrá reponer al jugador expulsado en ese partido.</li></ul>
+            </div>
+          </div>
+
+          <div class="reg-section fade-up" id="sanciones">
+            <h2><span>⚖️</span> 7. Sanciones</h2>
+            <ul>
+              <li>Conducta antideportiva del cuerpo técnico: amonestación o expulsión del banco.</li>
+              <li>Agresión a árbitros: suspensión temporal o definitiva del torneo.</li>
+              <li>Inasistencia injustificada a 2 partidos: descalificación del torneo.</li>
+              <li>La comisión disciplinaria será el órgano máximo en materia de sanciones.</li>
+            </ul>
+          </div>
+
+          <div class="reg-section fade-up" id="premiacion">
+            <h2><span>🎖️</span> 8. Premiación</h2>
+            <ul>
+              <li>🥇 Campeón: Trofeo + Medallas + Premio económico principal</li>
+              <li>🥈 Subcampeón: Trofeo + Medallas + Premio económico</li>
+              <li>🥉 Tercer lugar: Trofeo + Medallas</li>
+              <li>⚽ Goleador del torneo: Trofeo individual</li>
+              <li>🧤 Mejor portero: Trofeo individual</li>
+              <li>🌟 Jugador del torneo: Trofeo individual</li>
+              <li>🤝 Fair Play: Reconocimiento especial al equipo más disciplinado</li>
+            </ul>
+            <div style="margin-top:24px;text-align:center;">
+              <a href="contacto.html" class="btn btn-gold">Inscribir mi equipo ahora →</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+<script src="js/shared.js"></script>
+<script>document.addEventListener('DOMContentLoaded', () => setTimeout(initScrollReveal, 100));</script>
+</body>
+</html>

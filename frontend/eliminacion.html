@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fase de Eliminación — Torneo CUP 2026</title>
+  <link rel="stylesheet" href="css/global.css">
+  <style>
+    .bracket-scroll { overflow-x: auto; padding-bottom: 12px; }
+    .bracket-row { display: flex; gap: 28px; min-width: max-content; padding: 8px 4px 24px; }
+    .bracket-col { display: flex; flex-direction: column; justify-content: center; gap: 24px; min-width: 260px; }
+    .bracket-col-title {
+      text-align: center; font-family: var(--font-display); font-size: 0.85rem;
+      letter-spacing: 2px; text-transform: uppercase; color: var(--gold);
+      margin-bottom: 4px;
+    }
+    .bracket-match {
+      background: var(--navy-card); border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md); overflow: hidden;
+      transition: all var(--transition);
+    }
+    .bracket-match:hover { border-color: rgba(212,212,212,0.3); box-shadow: var(--shadow-gold); }
+    .bracket-team {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; font-size: 0.85rem; color: var(--white); font-weight: 600;
+      border-bottom: 1px solid var(--glass-border);
+    }
+    .bracket-team:last-child { border-bottom: none; }
+    .bracket-team.winner { background: rgba(212,212,212,0.06); color: var(--gold); }
+    .bracket-team .shield-mini { width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0; display:flex; align-items:center; justify-content:center; font-size:1rem; overflow:hidden; }
+    .bracket-team .tname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .bracket-team .tscore { font-family: var(--font-display); font-size: 1.05rem; flex-shrink: 0; }
+    .bracket-team.tbd { color: var(--gray-dark); font-style: italic; }
+    .bracket-meta {
+      text-align: center; font-size: 0.65rem; color: var(--gray); padding: 6px 0;
+      background: var(--navy-mid); letter-spacing: 1px;
+    }
+    .champion-banner {
+      background: linear-gradient(135deg, rgba(212,212,212,0.1), rgba(255,255,255,0.05));
+      border: 1px solid rgba(212,212,212,0.3); border-radius: var(--radius-xl);
+      padding: 48px; text-align: center; margin-top: 48px;
+    }
+    .third-place-card { max-width: 320px; margin: 40px auto 0; }
+    .empty-bracket {
+      text-align: center; padding: 64px 24px; color: var(--gray);
+      background: var(--navy-card); border: 1px dashed var(--glass-border); border-radius: var(--radius-lg);
+    }
+    @media (max-width: 640px) {
+      .bracket-col { min-width: 220px; }
+      .champion-banner { padding: 32px 20px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+  <div class="page-banner">
+    <div class="diagonal-stripe"></div>
+    <div class="container">
+      <div class="breadcrumb"><a href="index.html">Inicio</a> / Eliminación</div>
+      <h1>Fase de Eliminación</h1>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container">
+
+      <div style="max-width:640px;margin-bottom:40px;" class="fade-up">
+        <div class="accent-bar"></div>
+        <p style="color:var(--gray);line-height:1.9;">
+          Los mejores equipos de cada grupo avanzan al cuadro de eliminación directa, estilo Copa del Mundo:
+          el que pierde, queda fuera. Desliza horizontalmente para ver todas las rondas.
+        </p>
+      </div>
+
+      <div id="bracketWrap" class="fade-up"></div>
+      <div id="thirdPlaceWrap"></div>
+      <div id="championWrap"></div>
+
+    </div>
+  </section>
+</div>
+
+<script src="js/shared.js"></script>
+<script>
+const BRACKET_FASES = ['Octavos de Final', 'Cuartos de Final', 'Semifinal', 'Final'];
+
+function teamShield(team, size = 24) {
+  if (!team) return `<div class="shield-mini" style="background:var(--navy-mid);">❓</div>`;
+  return `<div class="shield-mini" style="background:var(--navy-mid);">${DC.crest(team, 'fill')}</div>`;
+}
+
+function matchCard(m) {
+  const l = m.local ? DC.getTeam(m.local) : null;
+  const v = m.visit ? DC.getTeam(m.visit) : null;
+  const finished = m.estado === 'Finalizado' && m.gL != null && m.gV != null;
+  const lWin = finished && m.gL > m.gV;
+  const vWin = finished && m.gV > m.gL;
+
+  const teamRow = (team, score, isWinner) => {
+    if (!team) return `<div class="bracket-team tbd"><span class="shield-mini">·</span><span class="tname">Por definir</span></div>`;
+    return `
+      <a href="equipo-detalle.html?id=${team.id}" style="text-decoration:none;">
+        <div class="bracket-team ${isWinner ? 'winner' : ''}">
+          ${teamShield(team)}
+          <span class="tname">${team.name}</span>
+          <span class="tscore">${finished ? score : ''}</span>
+        </div>
+      </a>`;
+  };
+
+  return `
+    <div class="bracket-match">
+      ${teamRow(l, m.gL, lWin)}
+      ${teamRow(v, m.gV, vWin)}
+      <div class="bracket-meta">${finished ? '✅ Finalizado' : (m.fecha ? `📅 ${m.fecha}${m.hora ? ' · ' + m.hora : ''}` : 'Por jugarse')}</div>
+    </div>`;
+}
+
+function renderBracket() {
+  const allKnockout = DC.matches.filter(m => DC.FASES_ELIMINACION.includes(m.fase));
+  const finalMatches = allKnockout.filter(m => m.fase === 'Final');
+  const thirdMatches = allKnockout.filter(m => m.fase === 'Tercer Lugar');
+
+  const cols = BRACKET_FASES
+    .map(fase => ({ fase, matches: allKnockout.filter(m => m.fase === fase) }))
+    .filter(c => c.matches.length > 0);
+
+  if (!cols.length) {
+    document.getElementById('bracketWrap').innerHTML = `
+      <div class="empty-bracket">
+        <div style="font-size:3rem;margin-bottom:12px;">🏆</div>
+        <div style="font-family:var(--font-display);font-size:1.3rem;color:var(--white);letter-spacing:2px;margin-bottom:8px;">Aún no hay llaves definidas</div>
+        <p style="font-size:0.85rem;">Cuando termine la fase de grupos se subira las llaves de eliminacion</p>
+      </div>`;
+    document.getElementById('thirdPlaceWrap').innerHTML = '';
+    document.getElementById('championWrap').innerHTML = '';
+    return;
+  }
+
+  document.getElementById('bracketWrap').innerHTML = `
+    <div class="bracket-scroll">
+      <div class="bracket-row">
+        ${cols.map(c => `
+          <div class="bracket-col">
+            <div class="bracket-col-title">${c.fase}</div>
+            ${c.matches.map(matchCard).join('')}
+          </div>`).join('')}
+      </div>
+    </div>`;
+
+  /* Tercer lugar, aparte del cuadro principal */
+  document.getElementById('thirdPlaceWrap').innerHTML = thirdMatches.length ? `
+    <div class="third-place-card fade-up">
+      <div class="bracket-col-title">🥉 Tercer Lugar</div>
+      ${thirdMatches.map(matchCard).join('')}
+    </div>` : '';
+
+  /* Banner de campeón si la final ya se jugó */
+  const final = finalMatches[0];
+  const champion = final && final.estado === 'Finalizado' && final.gL != null && final.gV != null
+    ? DC.getTeam(final.gL > final.gV ? final.local : final.visit)
+    : null;
+
+  document.getElementById('championWrap').innerHTML = champion ? `
+    <div class="champion-banner fade-up">
+      <div style="font-size:4rem;margin-bottom:12px;">🏆</div>
+      <div style="font-size:0.7rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Campeón DIMA CUP 2025</div>
+      <div style="font-family:var(--font-display);font-size:clamp(2rem,5vw,3.5rem);letter-spacing:3px;color:var(--white);display:flex;align-items:center;justify-content:center;gap:16px;">
+        <span style="width:64px;height:64px;border-radius:12px;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;background:var(--navy-mid);font-size:2.5rem;">${DC.crest(champion, 'fill')}</span>
+        ${champion.name}
+      </div>
+    </div>` : '';
+
+  setTimeout(initScrollReveal, 100);
+}
+
+document.addEventListener('DOMContentLoaded', async () => { await DC.ready; renderBracket(); });
+</script>
+</body>
+</html>

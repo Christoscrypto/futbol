@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendario — DIMA CUP 2025</title>
+  <link rel="stylesheet" href="css/global.css">
+  <style>
+    /* ── Vista lista mejorada ── */
+    .jornada-header {
+      display: flex; align-items: center; gap: 16px; margin-bottom: 14px; margin-top: 8px;
+    }
+    .jornada-label {
+      font-family: var(--font-display); font-size: 1.1rem; letter-spacing: 3px;
+      color: var(--gold); white-space: nowrap;
+    }
+    .jornada-line { flex: 1; height: 1px; background: var(--glass-border); }
+
+    .partido-card {
+      background: var(--navy-card); border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md); margin-bottom: 10px;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      overflow: hidden;
+    }
+    .partido-card:hover { border-color: rgba(255,255,255,0.35); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+
+    .partido-inner {
+      display: grid; grid-template-columns: 1fr auto 1fr;
+      align-items: center; gap: 20px; padding: 20px 24px;
+    }
+    .partido-team { display: flex; align-items: center; gap: 12px; }
+    .partido-team.away { flex-direction: row-reverse; text-align: right; }
+    .partido-team .shield {
+      width: 46px; height: 46px; background: var(--navy-mid);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; border: 1px solid var(--glass-border); flex-shrink: 0;
+    }
+    .partido-team .tname { font-weight: 700; font-size: 0.95rem; color: var(--white); }
+    .partido-team .trole { font-size: 0.65rem; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; }
+
+    .partido-center { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .score-box {
+      font-family: var(--font-display); font-size: 2rem; letter-spacing: 6px; color: var(--gold);
+      background: var(--navy-mid); padding: 8px 18px; border-radius: var(--radius-sm);
+      min-width: 100px;
+    }
+    .score-vs {
+      font-family: var(--font-display); font-size: 1.6rem; letter-spacing: 4px; color: var(--gray-dark);
+      min-width: 100px; text-align: center;
+    }
+
+    .partido-meta {
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+      gap: 8px; padding: 10px 24px; border-top: 1px solid var(--glass-border);
+      background: rgba(255,255,255,0.015); font-size: 0.72rem; color: var(--gray);
+    }
+
+    /* ── Vista calendario ── */
+    .cal-month { margin-bottom: 40px; }
+    .cal-month-title {
+      font-family: var(--font-display); font-size: 1.3rem; letter-spacing: 3px;
+      color: var(--white); margin-bottom: 14px;
+    }
+    .cal-grid-wrap {
+      background: var(--navy-card); border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md); overflow: hidden;
+    }
+    .cal-header-row {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      border-bottom: 1px solid var(--glass-border);
+      background: var(--navy-mid);
+    }
+    .cal-header-cell {
+      padding: 10px 8px; text-align: center;
+      font-size: 0.6rem; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--gray);
+    }
+    .cal-days-row { display: grid; grid-template-columns: repeat(7, 1fr); }
+    .cal-day {
+      padding: 8px 6px; min-height: 92px; min-width: 40px;
+      border: 1px solid rgba(255,255,255,0.03);
+      cursor: default; position: relative;
+      transition: background var(--transition);
+      display: flex; flex-direction: column;
+    }
+    .cal-day.has-match {
+      background: rgba(255,255,255,0.07);
+    }
+    .cal-day.has-match:hover { background: rgba(255,255,255,0.14); }
+    .cal-day .day-num {
+      font-size: 0.78rem; font-weight: 400; color: var(--gray);
+    }
+    .cal-day.has-match .day-num { color: var(--white); font-weight: 700; }
+    .cal-day .match-count {
+      position: absolute; top: 6px; right: 6px;
+      font-size: 0.55rem; font-weight: 700; color: var(--electric);
+      background: rgba(255,255,255,0.15); border-radius: 8px; padding: 1px 5px;
+    }
+
+    /* Escudos dentro del día — estilo "cartelera" de videojuego */
+    .cal-day-matches { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; flex: 1; }
+    .cal-match-pair {
+      display: flex; align-items: center; justify-content: center; gap: 3px;
+      background: var(--navy-mid); border: 1px solid var(--glass-border);
+      border-radius: var(--radius-sm); padding: 3px 4px;
+      cursor: pointer; transition: all var(--transition);
+    }
+    .cal-match-pair:hover { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.1); transform: translateY(-1px); }
+    .cal-crest {
+      width: 20px; height: 20px; border-radius: 50%; overflow: hidden;
+      background: var(--navy-card); border: 1px solid var(--glass-border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; flex-shrink: 0;
+    }
+    .cal-match-pair .cal-vs { font-size: 0.5rem; color: var(--gray-dark); font-weight: 700; }
+    .cal-match-pair .cal-score { font-size: 0.6rem; color: var(--gold); font-weight: 700; white-space: nowrap; }
+    .cal-more {
+      text-align: center; font-size: 0.55rem; color: var(--electric);
+      font-weight: 700; margin-top: 1px;
+    }
+
+    /* Tooltip de partidos del día */
+    .day-tooltip {
+      position: absolute; top: calc(100% + 4px); left: 50%; transform: translateX(-50%);
+      background: var(--navy-mid); border: 1px solid var(--glass-border);
+      border-radius: var(--radius-sm); padding: 8px 12px;
+      font-size: 0.72rem; color: var(--white); white-space: nowrap;
+      z-index: 100; pointer-events: none; display: none;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+    .cal-day.has-match:hover .day-tooltip { display: block; }
+
+    /* Filtros responsive */
+    .filter-top {
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 16px; margin-bottom: 24px;
+    }
+    .view-toggle {
+      display: flex; gap: 4px; background: var(--navy-card);
+      padding: 4px; border-radius: var(--radius-sm); border: 1px solid var(--glass-border);
+    }
+    .filter-right { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+    /* Responsive tabla partidos */
+    @media (max-width: 600px) {
+      .partido-inner { grid-template-columns: 1fr; gap: 14px; padding: 16px; }
+      .partido-team.away { flex-direction: row; text-align: left; }
+      .score-box, .score-vs { font-size: 1.5rem; min-width: 80px; }
+      .cal-day { min-height: 76px; padding: 6px 3px; }
+      .cal-crest { width: 16px; height: 16px; font-size: 0.6rem; }
+      .cal-match-pair { padding: 2px 2px; gap: 2px; }
+      .cal-match-pair .cal-vs { display: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+  <div class="page-banner">
+    <div class="diagonal-stripe"></div>
+    <div class="container">
+      <div class="breadcrumb"><a href="index.html">Inicio</a> / Calendario</div>
+      <h1>Calendario</h1>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container">
+
+      <!-- Controles -->
+      <div class="filter-top fade-up">
+        <div class="view-toggle">
+          <button class="btn btn-primary btn-sm" id="btnList" onclick="setView('list')">☰ Lista</button>
+          <button class="btn btn-outline btn-sm" id="btnCal"  onclick="setView('cal')">📅 Calendario</button>
+        </div>
+        <div class="filter-right">
+          <select class="select" id="filterJornada" style="width:auto;" onchange="renderList()">
+            <option value="">Todas las jornadas</option>
+          </select>
+          <select class="select" id="filterTeam" style="width:auto;" onchange="renderList()">
+            <option value="">Todos los equipos</option>
+          </select>
+          <select class="select" id="filterEstado" style="width:auto;" onchange="renderList()">
+            <option value="">Todos los estados</option>
+            <option value="Finalizado">Finalizado</option>
+            <option value="Programado">Programado</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Resumen rápido -->
+      <div id="quickStats" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:28px;"></div>
+
+      <div id="listView"></div>
+      <div id="calView" style="display:none;"></div>
+    </div>
+  </section>
+</div>
+
+<script src="js/shared.js"></script>
+<script>
+let currentView = 'list';
+
+function setView(v) {
+  currentView = v;
+  document.getElementById('listView').style.display = v === 'list' ? '' : 'none';
+  document.getElementById('calView').style.display  = v === 'cal'  ? '' : 'none';
+  document.getElementById('btnList').className = v === 'list' ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm';
+  document.getElementById('btnCal').className  = v === 'cal'  ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm';
+}
+
+function populateFilters() {
+  const matches = DC.matches.filter(m => !m.fase || m.fase === 'Grupos');
+  const jornadas = [...new Set(matches.map(m => m.jornada))].sort((a, b) => a - b);
+  const jorEl = document.getElementById('filterJornada');
+  jornadas.forEach(j => {
+    const o = document.createElement('option');
+    o.value = j; o.textContent = `Jornada ${j}`;
+    jorEl.appendChild(o);
+  });
+
+  const teamEl = document.getElementById('filterTeam');
+  DC.teams.slice().sort((a, b) => a.name.localeCompare(b.name)).forEach(t => {
+    const o = document.createElement('option');
+    o.value = t.id; o.textContent = `${t.emoji} ${t.name}`;
+    teamEl.appendChild(o);
+  });
+}
+
+function renderQuickStats() {
+  const matches = DC.matches.filter(m => !m.fase || m.fase === 'Grupos');
+  const finished = matches.filter(m => m.estado === 'Finalizado');
+  const pending  = matches.filter(m => m.estado === 'Programado');
+  const totalGoles = finished.reduce((s, m) => s + m.gL + m.gV, 0);
+  const next = pending.sort((a, b) => a.fecha.localeCompare(b.fecha))[0];
+
+  document.getElementById('quickStats').innerHTML = [
+    ['Partidos Jugados', finished.length, 'var(--success)'],
+    ['Por Jugar',        pending.length,  'var(--electric)'],
+    ['Total Goles',      totalGoles,      'var(--gold)'],
+    ['Promedio Goles',   finished.length ? (totalGoles / finished.length).toFixed(1) : '—', 'var(--gray)'],
+  ].map(([label, val, color]) => `
+    <div style="background:var(--navy-card);border:1px solid var(--glass-border);border-radius:var(--radius-md);padding:16px 20px;">
+      <div style="font-family:var(--font-display);font-size:1.8rem;color:${color};">${val}</div>
+      <div style="font-size:0.65rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gray);margin-top:4px;">${label}</div>
+    </div>`).join('');
+}
+
+function renderList() {
+  const jF = document.getElementById('filterJornada').value;
+  const eF = document.getElementById('filterEstado').value;
+  const tF = document.getElementById('filterTeam').value;
+
+  let matches = DC.matches.filter(m => !m.fase || m.fase === 'Grupos');
+  if (jF) matches = matches.filter(m => m.jornada == jF);
+  if (eF) matches = matches.filter(m => m.estado === eF);
+  if (tF) matches = matches.filter(m => m.local == tF || m.visit == tF);
+
+  if (matches.length === 0) {
+    document.getElementById('listView').innerHTML = `
+      <div style="text-align:center;padding:60px 20px;color:var(--gray);">
+        <div style="font-size:3rem;margin-bottom:16px;">🔍</div>
+        <div style="font-size:1rem;">No se encontraron partidos con esos filtros.</div>
+      </div>`;
+    return;
+  }
+
+  // Agrupar por jornada
+  const byJ = {};
+  matches.forEach(m => { (byJ[m.jornada] = byJ[m.jornada] || []).push(m); });
+
+  document.getElementById('listView').innerHTML = Object.keys(byJ)
+    .sort((a, b) => a - b)
+    .map(j => {
+      const jMatches = byJ[j];
+      const allDone  = jMatches.every(m => m.estado === 'Finalizado');
+      const anyLive  = jMatches.some(m => m.estado === 'En vivo');
+      const statusLabel = anyLive
+        ? `<span class="badge badge-live">En Vivo</span>`
+        : allDone
+          ? `<span class="badge badge-finished">Completada</span>`
+          : `<span class="badge badge-scheduled">Pendiente</span>`;
+
+      return `
+        <div style="margin-bottom:32px;">
+          <div class="jornada-header fade-up">
+            <div class="jornada-label">Jornada ${j}</div>
+            ${statusLabel}
+            <div class="jornada-line"></div>
+            <div style="font-size:0.7rem;color:var(--gray);white-space:nowrap;">${jMatches.length} partido${jMatches.length > 1 ? 's' : ''}</div>
+          </div>
+          ${jMatches.map(m => renderPartidoCard(m)).join('')}
+        </div>`;
+    }).join('');
+
+  setTimeout(initScrollReveal, 100);
+}
+
+function renderPartidoCard(m) {
+  const l = DC.getTeam(m.local);
+  const v = DC.getTeam(m.visit);
+  if (!l || !v) return '';
+
+  const mvp = m.mvp ? DC.getPlayer(m.mvp) : null;
+
+  const fechaFormatted = (() => {
+    try {
+      const [y, mo, d] = m.fecha.split('-');
+      return new Date(y, mo - 1, d).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+    } catch { return m.fecha; }
+  })();
+
+  return `
+    <div class="partido-card fade-up" style="cursor:pointer;" onclick="location.href='partido-detalle.html?id=${m.id}'">
+      <div class="partido-inner">
+        <div class="partido-team">
+          <div class="shield">${DC.crest(l, 'fill')}</div>
+          <div>
+            <div class="tname">${l.name}</div>
+            <div class="trole">Local</div>
+          </div>
+        </div>
+        <div class="partido-center">
+          ${m.estado === 'Finalizado'
+            ? `<div class="score-box">${m.gL} — ${m.gV}</div>`
+            : `<div class="score-vs">VS</div>`}
+          <span class="badge badge-${m.estado === 'Finalizado' ? 'finished' : 'scheduled'}">${m.estado}</span>
+        </div>
+        <div class="partido-team away">
+          <div class="shield">${DC.crest(v, 'fill')}</div>
+          <div>
+            <div class="tname">${v.name}</div>
+            <div class="trole">Visitante</div>
+          </div>
+        </div>
+      </div>
+      <div class="partido-meta">
+        <span>📅 ${fechaFormatted} · ${m.hora}</span>
+        <span>📍 ${m.cancha}</span>
+        ${mvp ? `<span>🌟 MVP: <strong style="color:var(--gold);">${mvp.name}</strong></span>` : ''}
+      </div>
+    </div>`;
+}
+
+function renderCal() {
+  const matches = DC.matches.filter(m => !m.fase || m.fase === 'Grupos');
+  const months = {};
+  matches.forEach(m => {
+    const [y, mo] = m.fecha.split('-');
+    const key = `${y}-${mo}`;
+    (months[key] = months[key] || []).push(m);
+  });
+
+  const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  document.getElementById('calView').innerHTML = Object.keys(months).sort().map(key => {
+    const [y, mo] = key.split('-');
+    const daysInMonth = new Date(y, mo, 0).getDate();
+    const firstDay    = new Date(y, mo - 1, 1).getDay();
+    const days = Array.from({ length: 42 }, (_, i) => {
+      const d = i - firstDay + 1;
+      return (d < 1 || d > daysInMonth) ? null : d;
+    });
+
+    const matchDays = {};
+    months[key].forEach(m => {
+      const d = parseInt(m.fecha.split('-')[2]);
+      (matchDays[d] = matchDays[d] || []).push(m);
+    });
+
+    return `
+      <div class="cal-month fade-up">
+        <div class="cal-month-title">${monthNames[+mo - 1]} ${y}</div>
+        <div class="cal-grid-wrap">
+          <div class="cal-header-row">
+            ${['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map(d => `<div class="cal-header-cell">${d}</div>`).join('')}
+          </div>
+          <div class="cal-days-row">
+            ${days.map(d => {
+              if (d === null) return `<div class="cal-day"></div>`;
+              const ms = matchDays[d];
+              if (!ms) return `<div class="cal-day"><div class="day-num">${d}</div></div>`;
+              const tips = ms.map(m => {
+                const l = DC.getTeam(m.local), v = DC.getTeam(m.visit);
+                return `${l ? l.short : '?'} vs ${v ? v.short : '?'} · ${m.hora}`;
+              }).join('<br>');
+              const shown = ms.slice(0, 2);
+              const pairsHtml = shown.map(m => {
+                const l = DC.getTeam(m.local), v = DC.getTeam(m.visit);
+                const scoreHtml = m.estado === 'Finalizado'
+                  ? `<span class="cal-score">${m.gL}-${m.gV}</span>`
+                  : `<span class="cal-vs">vs</span>`;
+                return `
+                  <div class="cal-match-pair" onclick="event.stopPropagation();location.href='partido-detalle.html?id=${m.id}'" title="${l?l.short:'?'} vs ${v?v.short:'?'} · ${m.hora}">
+                    <span class="cal-crest">${DC.crest(l, 'fill')}</span>
+                    ${scoreHtml}
+                    <span class="cal-crest">${DC.crest(v, 'fill')}</span>
+                  </div>`;
+              }).join('');
+              const moreHtml = ms.length > 2 ? `<div class="cal-more">+${ms.length - 2} más</div>` : '';
+              return `
+                <div class="cal-day has-match" title="${ms.map(m => {
+                  const l = DC.getTeam(m.local), v = DC.getTeam(m.visit);
+                  return `${l?.short} vs ${v?.short} ${m.hora}`;
+                }).join(' | ')}">
+                  <div class="day-num">${d}</div>
+                  ${ms.length > 1 ? `<div class="match-count">${ms.length}</div>` : ''}
+                  <div class="cal-day-matches">${pairsHtml}${moreHtml}</div>
+                  <div class="day-tooltip">${tips}</div>
+                </div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  setTimeout(initScrollReveal, 100);
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await DC.ready;
+  populateFilters();
+  renderQuickStats();
+  renderList();
+  renderCal();
+
+  document.getElementById('filterJornada').addEventListener('change', renderList);
+  document.getElementById('filterEstado').addEventListener('change', renderList);
+  document.getElementById('filterTeam').addEventListener('change', renderList);
+});
+</script>
+</body>
+</html>

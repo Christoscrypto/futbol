@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patrocinadores — DIMA CUP 2025</title>
+  <link rel="stylesheet" href="css/global.css">
+  <style>
+    .tier-section { margin-bottom: 64px; }
+    .tier-label {
+      display: inline-flex; align-items: center; gap: 12px;
+      font-family: var(--font-display); font-size: 1.8rem; letter-spacing: 3px;
+      margin-bottom: 24px;
+    }
+    .sponsor-card {
+      background: var(--navy-card);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 40px 32px;
+      text-align: center;
+      transition: all var(--transition);
+      position: relative; overflow: hidden;
+    }
+    .sponsor-card::after {
+      content: '';
+      position: absolute; inset: 0;
+      border-radius: inherit;
+      opacity: 0; transition: opacity var(--transition);
+    }
+    .sponsor-card.platino::after { background: linear-gradient(135deg,rgba(200,200,200,0.06),rgba(255,255,255,0.02)); }
+    .sponsor-card.oro::after { background: linear-gradient(135deg,rgba(212,212,212,0.08),rgba(140,140,140,0.03)); }
+    .sponsor-card.plata::after { background: linear-gradient(135deg,rgba(153,153,153,0.08),transparent); }
+    .sponsor-card:hover::after { opacity: 1; }
+    .sponsor-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-card); }
+    .sponsor-card.platino:hover { border-color: rgba(200,200,200,0.3); box-shadow: 0 8px 40px rgba(200,200,200,0.1); }
+    .sponsor-card.oro:hover { border-color: rgba(212,212,212,0.4); box-shadow: var(--shadow-gold); }
+    .sponsor-card.plata:hover { border-color: rgba(153,153,153,0.3); }
+    .sponsor-card.bronce:hover { border-color: rgba(205,127,50,0.3); }
+    .sponsor-emoji { font-size: 3.5rem; margin-bottom: 16px; }
+    .sponsor-name { font-family: var(--font-display); font-size: 1.3rem; letter-spacing: 2px; color: var(--white); margin-bottom: 4px; }
+    .sponsor-tier-badge { font-size: 0.65rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+
+    /* Jerarquía visual por nivel: Platino más grande, Bronce más compacto */
+    .sponsor-card.oro { padding: 32px 26px; }
+    .sponsor-card.oro .sponsor-emoji { font-size: 3rem; }
+    .sponsor-card.oro .sponsor-name { font-size: 1.15rem; }
+
+    .sponsor-card.plata { padding: 28px 24px; }
+    .sponsor-card.plata .sponsor-emoji { font-size: 2.5rem; margin-bottom: 12px; }
+    .sponsor-card.plata .sponsor-name { font-size: 1rem; }
+
+    .sponsor-card.bronce { padding: 24px 20px; }
+    .sponsor-card.bronce .sponsor-emoji { font-size: 2rem; margin-bottom: 10px; }
+    .sponsor-card.bronce .sponsor-name { font-size: 0.9rem; }
+    .cta-sponsor {
+      background: linear-gradient(135deg, var(--navy-card), var(--navy-mid));
+      border: 1px solid var(--glass-border); border-radius: var(--radius-xl);
+      padding: 64px 48px; text-align: center; position: relative; overflow: hidden;
+    }
+    .cta-sponsor::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.1) 0%, transparent 60%);
+    }
+    @media (max-width: 640px) {
+      .sponsor-card { padding: 28px 18px; }
+      .sponsor-card.oro { padding: 24px 16px; }
+      .sponsor-card.plata { padding: 20px 14px; }
+      .sponsor-card.bronce { padding: 18px 12px; }
+      .cta-sponsor { padding: 40px 24px; }
+      .tier-label { font-size: 1.4rem; }
+      .tier-section { margin-bottom: 44px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+  <div class="page-banner">
+    <div class="diagonal-stripe"></div>
+    <div class="container">
+      <div class="breadcrumb"><a href="index.html">Inicio</a> / Patrocinadores</div>
+      <h1>Patrocinadores</h1>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container">
+
+      <!-- Intro -->
+      <div style="max-width:640px;margin-bottom:48px;" class="fade-up">
+        <div class="accent-bar"></div>
+        <p style="color:var(--gray);line-height:1.9;">
+          El DIMA CUP es posible gracias al apoyo incondicional de empresas y marcas que creen en el deporte local. 
+          Su patrocinio contribuye al desarrollo del fútbol en Durango y permite que nuestros jugadores brillen.
+        </p>
+        <div id="sponsorCount" style="margin-top:16px;font-size:0.75rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--electric);"></div>
+      </div>
+
+      <!-- Platino -->
+      <div class="tier-section fade-up" id="tierPlatino">
+        <div class="tier-label" style="color:#E0E0E0;">
+          <span>💎</span> Patrocinadores Platino
+        </div>
+        <div class="sponsor-grid" id="platinoGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;"></div>
+      </div>
+
+      <!-- Oro -->
+      <div class="tier-section fade-up" id="tierOro">
+        <div class="tier-label" style="color:var(--gold);">
+          <span>🥇</span> Patrocinadores Oro
+        </div>
+        <div class="sponsor-grid" id="oroGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;"></div>
+      </div>
+
+      <!-- Plata -->
+      <div class="tier-section fade-up" id="tierPlata">
+        <div class="tier-label" style="color:var(--gray);">
+          <span>🥈</span> Patrocinadores Plata
+        </div>
+        <div class="sponsor-grid" id="plataGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;"></div>
+      </div>
+
+      <!-- Bronce -->
+      <div class="tier-section fade-up" id="tierBronce">
+        <div class="tier-label" style="color:#CD7F32;">
+          <span>🥉</span> Patrocinadores Bronce
+        </div>
+        <div class="sponsor-grid" id="bronceGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;"></div>
+      </div>
+
+      <!-- CTA -->
+      <div class="cta-sponsor fade-up">
+        <div style="position:relative;z-index:1;">
+          <div style="font-size:3rem;margin-bottom:16px;">🤝</div>
+          <h2 style="font-family:var(--font-display);font-size:clamp(2rem,4vw,3rem);letter-spacing:3px;color:var(--white);margin-bottom:12px;">¿Quieres patrocinar el DIMA CUP?</h2>
+          <p style="color:var(--gray);max-width:500px;margin:0 auto 32px;line-height:1.8;">
+            Únete a las marcas que apoyan el fútbol en Durango. Tenemos planes de patrocinio a tu medida con gran visibilidad en el torneo.
+          </p>
+          <a href="contacto.html" class="btn btn-gold">Contactar para patrocinar →</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</div>
+<script src="js/shared.js"></script>
+<script>
+function sponsorIcon(s, size) {
+  if (s.img) return `<img src="${s.img}" alt="${s.name}" style="width:${size}px;height:${size}px;object-fit:cover;border-radius:var(--radius-md);">`;
+  return s.emoji || '🏢';
+}
+
+function renderTier(tierName, gridId, sectionId, iconSize, badgeColor, badgeExtra) {
+  const list = DC.sponsors.filter(s => s.tier === tierName);
+  const section = document.getElementById(sectionId);
+  if (!list.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  document.getElementById(gridId).innerHTML = list.map(s => `
+    <div class="sponsor-card ${tierName.toLowerCase()}">
+      <div class="sponsor-emoji">${sponsorIcon(s, iconSize)}</div>
+      <div class="sponsor-name">${s.name}</div>
+      <div class="sponsor-tier-badge" style="color:${badgeColor};">${tierName}${badgeExtra || ''}</div>
+    </div>`).join('');
+}
+
+function renderSponsors() {
+  renderTier('Platino', 'platinoGrid', 'tierPlatino', 56, '#C0C0C0', ' · Patrocinador Principal');
+  renderTier('Oro',     'oroGrid',     'tierOro',     48, 'var(--gold)');
+  renderTier('Plata',   'plataGrid',   'tierPlata',   40, 'var(--gray)');
+  renderTier('Bronce',  'bronceGrid',  'tierBronce',  36, '#CD7F32');
+
+  document.getElementById('sponsorCount').textContent =
+    `${DC.sponsors.length} marca${DC.sponsors.length !== 1 ? 's' : ''} hacen posible el torneo`;
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await DC.ready;
+  renderSponsors();
+  setTimeout(initScrollReveal, 100);
+});
+</script>
+</body>
+</html>

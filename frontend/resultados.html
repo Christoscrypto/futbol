@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resultados — DIMA CUP 2025</title>
+  <link rel="stylesheet" href="css/global.css">
+</head>
+<body>
+<div class="page-wrapper">
+  <div class="page-banner">
+    <div class="diagonal-stripe"></div>
+    <div class="container">
+      <div class="breadcrumb"><a href="index.html">Inicio</a> / Resultados</div>
+      <h1>Resultados</h1>
+    </div>
+  </div>
+  <section class="section">
+    <div class="container">
+      <div class="filter-bar fade-up">
+        <div class="filter-group">
+          <label>Jornada</label>
+          <select class="select" id="fJ">
+            <option value="">Todas</option>
+          </select>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="downloadPDF()">⬇ PDF</button>
+      </div>
+      <div id="resultsContainer"></div>
+
+      <div style="margin-top:48px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:var(--navy-card);border:1px solid var(--glass-border);border-radius:var(--radius-md);padding:20px 24px;" class="fade-up">
+        <div>
+          <div style="font-family:var(--font-display);font-size:1.1rem;letter-spacing:2px;color:var(--white);">¿Buscas los resultados de la eliminatoria?</div>
+          <div style="font-size:0.8rem;color:var(--gray);">Cuartos, semifinal y la gran final están en la fase eliminatoria.</div>
+        </div>
+        <a href="eliminacion.html" class="btn btn-gold btn-sm">Ver Eliminación 🏆</a>
+      </div>
+    </div>
+  </section>
+</div>
+<script src="js/shared.js"></script>
+<script>
+function render() {
+  const jF = document.getElementById('fJ').value;
+  let matches = DC.matches.filter(m=>m.estado==='Finalizado' && (!m.fase || m.fase==='Grupos'));
+  if(jF) matches = matches.filter(m=>m.jornada==jF);
+  const byJ={};
+  matches.forEach(m=>{(byJ[m.jornada]=byJ[m.jornada]||[]).push(m);});
+  document.getElementById('resultsContainer').innerHTML = Object.keys(byJ).sort((a,b)=>b-a).map(j=>`
+    <div style="margin-bottom:40px;">
+      <div style="font-family:var(--font-display);font-size:1.4rem;letter-spacing:3px;color:var(--gold);margin-bottom:16px;display:flex;align-items:center;gap:16px;">Jornada ${j}<div style="flex:1;height:1px;background:var(--glass-border);"></div></div>
+      ${byJ[j].map(m=>{
+        const l=DC.getTeam(m.local),v=DC.getTeam(m.visit);
+        const mvp=m.mvp?DC.getPlayer(m.mvp):null;
+        return `
+          <div class="card fade-up" style="padding:24px;margin-bottom:12px;cursor:pointer;" onclick="location.href='partido-detalle.html?id=${m.id}'">
+            <div class="match-card" style="background:none;border:none;padding:0;margin-bottom:16px;">
+              <div class="match-team"><div class="team-shield">${DC.crest(l, 'fill')}</div><div><div class="team-name">${l.name}</div><div class="team-short">Local</div></div></div>
+              <div class="match-score"><div class="score-display">${m.gL} — ${m.gV}</div><div class="score-time">${m.fecha} · ${m.hora}</div><span class="badge badge-finished">Finalizado</span></div>
+              <div class="match-team away"><div class="team-shield">${DC.crest(v, 'fill')}</div><div style="text-align:right;"><div class="team-name">${v.name}</div><div class="team-short">Visitante</div></div></div>
+            </div>
+            <div style="padding-top:16px;border-top:1px solid var(--glass-border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+              <div style="font-size:0.75rem;color:var(--gray);">📍 ${m.cancha}</div>
+              ${mvp?`<div style="font-size:0.75rem;"><span style="color:var(--gray);">🌟 MVP: </span><a href="jugador-detalle.html?id=${mvp.id}" onclick="event.stopPropagation()" style="color:var(--gold);font-weight:700;text-decoration:none;">${mvp.name}</a></div>`:''}
+            </div>
+          </div>`;
+      }).join('')}
+    </div>`).join('');
+  setTimeout(initScrollReveal,100);
+}
+function downloadPDF(){showToast('Descarga de resultados en PDF próximamente.');}
+function populateJornadas() {
+  const jornadas = [...new Set(
+    DC.matches.filter(m => !m.fase || m.fase === 'Grupos').map(m => m.jornada)
+  )].sort((a,b) => a-b);
+  document.getElementById('fJ').innerHTML = '<option value="">Todas</option>' +
+    jornadas.map(j => `<option value="${j}">Jornada ${j}</option>`).join('');
+}
+document.addEventListener('DOMContentLoaded', async () => {
+  await DC.ready;
+  populateJornadas();
+  render();
+  document.getElementById('fJ').addEventListener('change', render);
+});
+</script>
+</body>
+</html>

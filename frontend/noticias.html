@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Noticias — DIMA CUP 2025</title>
+  <link rel="stylesheet" href="css/global.css">
+  <style>
+    .news-hero-card {
+      background: linear-gradient(135deg, var(--navy-card), var(--navy-mid));
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-xl);
+      padding: 48px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 40px;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .news-hero-card:hover { border-color: rgba(255,255,255,0.3); transform: translateY(-2px); }
+    .news-hero-card::before {
+      content: '';
+      position: absolute; top: 0; right: 0; bottom: 0; width: 40%;
+      background: linear-gradient(135deg, transparent, rgba(255,255,255,0.06));
+      clip-path: polygon(20% 0, 100% 0, 100% 100%, 0 100%);
+    }
+    .news-big-emoji { font-size: 6rem; line-height: 1; }
+    .news-card {
+      background: var(--navy-card);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      cursor: pointer;
+      transition: all var(--transition);
+      display: flex; flex-direction: column;
+    }
+    .news-card:hover { border-color: rgba(255,255,255,0.3); transform: translateY(-4px); box-shadow: var(--shadow-card); }
+    .news-cat-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 999px;
+      font-size: 0.62rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+      background: rgba(255,255,255,0.12); color: var(--electric);
+      border: 1px solid rgba(255,255,255,0.2);
+      margin-bottom: 12px; width: fit-content;
+    }
+    @media (max-width: 640px) {
+      .news-hero-card { grid-template-columns: 1fr; padding: 28px; text-align: center; gap: 16px; }
+      .news-big-emoji { font-size: 4rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+  <div class="page-banner">
+    <div class="diagonal-stripe"></div>
+    <div class="container">
+      <div class="breadcrumb"><a href="index.html">Inicio</a> / Noticias</div>
+      <h1>Noticias</h1>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container">
+      <!-- Featured -->
+      <div class="section-header fade-up">
+        <div class="accent-bar"></div>
+        <div class="overline">Destacado</div>
+        <h2>Última Hora</h2>
+      </div>
+      <div id="featuredNews" style="margin-bottom:64px;"></div>
+
+      <!-- Filter bar -->
+      <div class="filter-bar fade-up" style="margin-bottom:40px;">
+        <div class="filter-group" style="flex:2;">
+          <label>Buscar</label>
+          <input type="text" class="input" id="searchNews" placeholder="Buscar noticias...">
+        </div>
+        <div class="filter-group">
+          <label>Categoría</label>
+          <select class="select" id="filterCat">
+            <option value="">Todas</option>
+            <option value="Resultados">Resultados</option>
+            <option value="Estadísticas">Estadísticas</option>
+            <option value="Torneo">Torneo</option>
+            <option value="Premios">Premios</option>
+            <option value="Infraestructura">Infraestructura</option>
+            <option value="Inscripciones">Inscripciones</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="newsCount" style="color:var(--gray);font-size:0.8rem;margin-bottom:20px;"></div>
+      <div id="newsGrid" class="grid-3"></div>
+    </div>
+  </section>
+</div>
+<script src="js/shared.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  await DC.ready;
+  // Featured (first news)
+  const feat = DC.news[0];
+  document.getElementById('featuredNews').innerHTML = `
+    <div class="news-hero-card fade-up">
+      <div class="news-big-emoji">${feat.emoji}</div>
+      <div style="position:relative;z-index:1;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+          <span class="news-cat-pill">${feat.cat}</span>
+          <span style="font-size:0.72rem;color:var(--gray);">${feat.date}</span>
+          <span class="badge badge-live">NUEVO</span>
+        </div>
+        <h2 style="font-family:var(--font-display);font-size:clamp(1.5rem,3vw,2.5rem);letter-spacing:2px;color:var(--white);margin-bottom:12px;line-height:1.1;">${feat.title}</h2>
+        <p style="color:var(--gray);font-size:0.9rem;line-height:1.8;max-width:600px;">${feat.excerpt}</p>
+        <div style="margin-top:20px;">
+          <span style="color:var(--electric);font-size:0.8rem;font-weight:700;">Leer noticia completa →</span>
+        </div>
+      </div>
+    </div>`;
+
+  function render() {
+    const search = document.getElementById('searchNews').value.toLowerCase();
+    const cat = document.getElementById('filterCat').value;
+    let news = DC.news.slice(1);
+    if (search) news = news.filter(n => n.title.toLowerCase().includes(search) || n.excerpt.toLowerCase().includes(search));
+    if (cat) news = news.filter(n => n.cat === cat);
+
+    document.getElementById('newsCount').textContent = `${news.length} artículo${news.length !== 1 ? 's' : ''} encontrado${news.length !== 1 ? 's' : ''}`;
+    document.getElementById('newsGrid').innerHTML = news.map(n => `
+      <div class="news-card fade-up">
+        <div style="font-size:3rem;margin-bottom:16px;line-height:1;">${n.emoji}</div>
+        <div class="news-cat-pill">${n.cat}</div>
+        <div style="font-weight:700;font-size:0.95rem;color:var(--white);margin-bottom:8px;line-height:1.4;flex:1;">${n.title}</div>
+        <p style="font-size:0.82rem;color:var(--gray);line-height:1.7;margin-bottom:16px;">${n.excerpt}</p>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-top:16px;border-top:1px solid var(--glass-border);">
+          <span style="font-size:0.7rem;color:var(--gray-dark);">📅 ${n.date}</span>
+          <span style="font-size:0.75rem;color:var(--electric);font-weight:600;">Leer más →</span>
+        </div>
+      </div>`).join('');
+    setTimeout(initScrollReveal, 100);
+  }
+
+  render();
+  document.getElementById('searchNews').addEventListener('input', render);
+  document.getElementById('filterCat').addEventListener('change', render);
+  setTimeout(initScrollReveal, 100);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Posiciones — DIMA CUP 2025</title>
+  <link rel="stylesheet" href="css/global.css">
+  <style>
+    /* ── Tabla mejorada ── */
+    .standings-wrap { overflow-x: auto; border-radius: var(--radius-md); border: 1px solid var(--glass-border); }
+    .standings-table { width: 100%; border-collapse: collapse; min-width: 640px; }
+    .standings-table thead th {
+      padding: 12px 14px; text-align: left;
+      font-size: 0.6rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--gray); background: var(--navy-mid);
+      border-bottom: 1px solid var(--glass-border); white-space: nowrap;
+    }
+    .standings-table thead th:not(:first-child):not(:nth-child(2)) { text-align: center; }
+    .standings-table tbody tr { border-bottom: 1px solid rgba(255,255,255,0.04); transition: background var(--transition); }
+    .standings-table tbody tr:last-child { border-bottom: none; }
+    .standings-table tbody tr:hover { background: rgba(255,255,255,0.05); }
+    .standings-table tbody td { padding: 14px; font-size: 0.85rem; color: var(--white); }
+    .standings-table tbody td:not(:nth-child(2)) { text-align: center; }
+
+    /* zona highlight */
+    .zone-champions td:first-child { border-left: 3px solid var(--electric); }
+    .zone-danger    td:first-child { border-left: 3px solid var(--danger); }
+
+    /* Forma */
+    .forma-dot {
+      width: 20px; height: 20px; border-radius: 4px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 0.55rem; font-weight: 800; color: var(--navy);
+    }
+    .forma-W { background: var(--success); }
+    .forma-D { background: var(--gold); }
+    .forma-L { background: var(--danger); }
+
+    /* Pos badge */
+    .pos-num {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-size: 1rem; font-weight: 700;
+    }
+    /* Leyenda */
+    .legend { display: flex; gap: 20px; flex-wrap: wrap; font-size: 0.72rem; color: var(--gray); }
+    .legend-item { display: flex; align-items: center; gap: 8px; }
+    .legend-bar { width: 10px; height: 10px; border-radius: 2px; }
+
+    /* Gráfico de barras por puntos */
+    .pts-bar-wrap { background: var(--navy-card); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 28px; }
+    .pts-bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .pts-bar-label { width: 130px; font-size: 0.78rem; color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+    .pts-bar-track { flex: 1; height: 10px; background: var(--navy-mid); border-radius: 99px; overflow: hidden; }
+    .pts-bar-fill  { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--electric), var(--gold)); transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+    .pts-bar-val { font-family: var(--font-display); font-size: 1rem; color: var(--gold); width: 28px; text-align: right; flex-shrink: 0; }
+    @media (max-width: 640px) {
+      .pts-bar-wrap { padding: 18px; }
+      .pts-bar-label { width: 90px; font-size: 0.7rem; }
+      .legend { gap: 12px; font-size: 0.68rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+  <div class="page-banner">
+    <div class="diagonal-stripe"></div>
+    <div class="container">
+      <div class="breadcrumb"><a href="index.html">Inicio</a> / Posiciones</div>
+      <h1>Tabla de Posiciones</h1>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container">
+
+      <!-- Controles -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;" class="fade-up">
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-bar" style="background:rgba(255,255,255,0.5);"></div>
+            Clasifican a la eliminatoria (Top 2 del grupo)
+          </div>
+        </div>
+        <a href="eliminacion.html" class="btn btn-gold btn-sm">Ver Fase de Eliminación 🏆</a>
+      </div>
+
+      <!-- Tablas por grupo -->
+      <div id="groupsContainer"></div>
+
+      <!-- Estadísticas globales -->
+      <div style="margin-top:56px;">
+        <div style="font-family:var(--font-display);font-size:1.4rem;letter-spacing:2px;color:var(--white);margin-bottom:20px;" class="fade-up">
+          Estadísticas Globales
+        </div>
+        <div id="globalStats" class="grid-4"></div>
+      </div>
+
+      <!-- Gráfico de puntos -->
+      <div style="margin-top:56px;" class="fade-up">
+        <div style="font-family:var(--font-display);font-size:1.4rem;letter-spacing:2px;color:var(--white);margin-bottom:20px;">
+          Puntos por Equipo
+        </div>
+        <div class="pts-bar-wrap" id="ptsChart"></div>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+<script src="js/shared.js"></script>
+<script>
+function getForma(teamId) {
+  /* Últimos 5 partidos finalizados del equipo (fase de grupos) */
+  const matches = DC.matches
+    .filter(m => (m.local == teamId || m.visit == teamId) && m.estado === 'Finalizado' && (!m.fase || m.fase === 'Grupos'))
+    .slice(-5);
+
+  return matches.map(m => {
+    const isLocal = m.local == teamId;
+    const gF = isLocal ? m.gL : m.gV;
+    const gC = isLocal ? m.gV : m.gL;
+    if (gF > gC) return 'W';
+    if (gF < gC) return 'L';
+    return 'D';
+  });
+}
+
+function sortStandings(teams) {
+  return [...teams].sort((a, b) => {
+    if (b.pts !== a.pts) return b.pts - a.pts;
+    const da = a.gf - a.gc, db = b.gf - b.gc;
+    if (db !== da) return db - da;
+    return b.gf - a.gf;
+  });
+}
+
+function renderGroupTable(grupo, teams) {
+  const sorted = sortStandings(teams);
+  const fLabel = { W:'V', D:'E', L:'D' };
+  const fTitle = { W:'Victoria', D:'Empate', L:'Derrota' };
+
+  const rows = sorted.map((t, i) => {
+    const dg = t.gf - t.gc;
+    const forma = getForma(t.id);
+    const isQualified = i < 2; /* Top 2 del grupo avanzan a la eliminatoria */
+
+    let posColor = 'var(--gray)';
+    if (i === 0) posColor = 'var(--gold)';
+    else if (i === 1) posColor = '#C0C0C0';
+
+    return `
+      <tr class="${isQualified ? 'zone-champions' : ''}">
+        <td><span class="pos-num" style="color:${posColor};">${i + 1}</span></td>
+        <td>
+          <a href="equipo-detalle.html?id=${t.id}" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--white);">
+            <span style="font-size:1.4rem;">${DC.crest(t, 28)}</span>
+            <div>
+              <div style="font-weight:700;font-size:0.9rem;">${t.name}</div>
+              <div style="font-size:0.65rem;color:var(--gray);">${t.city} · ${t.cat}</div>
+            </div>
+          </a>
+        </td>
+        <td>${t.pj}</td>
+        <td style="color:var(--success);font-weight:700;">${t.pg}</td>
+        <td style="color:var(--gold);">${t.pe}</td>
+        <td style="color:var(--danger);">${t.pp}</td>
+        <td>${t.gf}</td>
+        <td>${t.gc}</td>
+        <td style="color:${dg>0?'var(--success)':dg<0?'var(--danger)':'var(--gray)'};">${dg > 0 ? '+' : ''}${dg}</td>
+        <td><span style="font-family:var(--font-display);font-size:1.5rem;color:var(--gold);">${t.pts}</span></td>
+        <td>
+          <div style="display:flex;gap:3px;justify-content:center;flex-wrap:wrap;">
+            ${forma.length
+              ? forma.map(f => `<div class="forma-dot forma-${f}" title="${fTitle[f]}">${fLabel[f]}</div>`).join('')
+              : '<span style="color:var(--gray-dark);font-size:0.7rem;">—</span>'
+            }
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+
+  return `
+    <div class="fade-up" style="margin-bottom:36px;">
+      <div style="font-family:var(--font-display);font-size:1.3rem;letter-spacing:2px;color:var(--white);margin-bottom:12px;display:flex;align-items:center;gap:10px;">
+        <span style="background:var(--electric);color:var(--navy);width:32px;height:32px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:1.1rem;">${grupo}</span>
+        Grupo ${grupo}
+      </div>
+      <div class="standings-wrap">
+        <table class="standings-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Equipo</th>
+              <th title="Partidos Jugados">PJ</th>
+              <th title="Partidos Ganados" style="color:var(--success);">PG</th>
+              <th title="Partidos Empatados" style="color:var(--gold);">PE</th>
+              <th title="Partidos Perdidos" style="color:var(--danger);">PP</th>
+              <th title="Goles a Favor">GF</th>
+              <th title="Goles en Contra">GC</th>
+              <th title="Diferencia de Goles">DG</th>
+              <th title="Puntos">PTS</th>
+              <th title="Últimos 5 partidos">Forma</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function renderTable() {
+  document.getElementById('groupsContainer').innerHTML =
+    DC.groups.map(g => renderGroupTable(g, DC.getGroupTeams(g))).join('');
+
+  renderPtsChart(sortStandings(DC.teams));
+  setTimeout(initScrollReveal, 100);
+}
+
+function renderPtsChart(teams) {
+  const maxPts = Math.max(...teams.map(t => t.pts), 1);
+  document.getElementById('ptsChart').innerHTML = teams.map(t => `
+    <div class="pts-bar-row fade-up">
+      <div class="pts-bar-label" title="${t.name}">${DC.crest(t, 18)} ${t.name} <span style="color:var(--gray);">· Grupo ${t.grupo||'A'}</span></div>
+      <div class="pts-bar-track">
+        <div class="pts-bar-fill" style="width:${(t.pts/maxPts*100).toFixed(1)}%;"></div>
+      </div>
+      <div class="pts-bar-val">${t.pts}</div>
+    </div>`).join('');
+  setTimeout(initScrollReveal, 50);
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await DC.ready;
+  renderTable();
+
+  const finished = DC.matches.filter(m => m.estado === 'Finalizado');
+  const topScorer = [...DC.players].sort((a, b) => b.goles - a.goles)[0];
+  document.getElementById('globalStats').innerHTML = [
+    ['Total Goles',       finished.reduce((s, m) => s + m.gL + m.gV, 0), '⚽'],
+    ['Partidos Jugados',  finished.length,                                 '📅'],
+    ['Equipos Activos',   DC.teams.length,                                 '👕'],
+    ['Máximo Goleador',   topScorer ? topScorer.goles : 0,                 '🏆'],
+  ].map(([l, v, ic]) => `
+    <div class="stat-box fade-up">
+      <div style="font-size:2rem;margin-bottom:8px;">${ic}</div>
+      <div class="stat-num">${v}</div>
+      <div class="stat-label">${l}</div>
+    </div>`).join('');
+
+  setTimeout(initScrollReveal, 100);
+});
+
+function downloadPDF() { showToast('Exportación a PDF próximamente.'); }
+</script>
+</body>
+</html>

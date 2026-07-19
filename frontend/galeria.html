@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Galería — DIMA CUP 2025</title>
+  <link rel="stylesheet" href="css/global.css">
+  <style>
+    .gallery-masonry {
+      columns: 4;
+      column-gap: 12px;
+    }
+    @media (max-width: 1024px) { .gallery-masonry { columns: 3; } }
+    @media (max-width: 640px)  { .gallery-masonry { columns: 2; } }
+
+    .gallery-thumb {
+      break-inside: avoid;
+      margin-bottom: 12px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+      display: block;
+    }
+    .gallery-thumb-inner {
+      width: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 4rem;
+      transition: transform 0.4s ease;
+      background: var(--navy-card);
+      border: 1px solid var(--glass-border);
+    }
+    .gallery-thumb:hover .gallery-thumb-inner { transform: scale(1.05); }
+    .gallery-thumb-overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.3s ease;
+      gap: 6px;
+    }
+    .gallery-thumb:hover .gallery-thumb-overlay { opacity: 1; }
+    .gallery-thumb-overlay .icon { font-size: 2rem; }
+    .gallery-thumb-overlay .label { font-size: 0.7rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: white; }
+
+    /* Lightbox */
+    .lightbox {
+      position: fixed; inset: 0; z-index: 2000;
+      background: rgba(4,10,22,0.96);
+      display: none; align-items: center; justify-content: center;
+      flex-direction: column; gap: 20px;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox-img {
+      max-width: 80vw; max-height: 70vh;
+      font-size: 10rem; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--navy-card);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 40px 60px;
+      animation: zoomIn 0.3s ease;
+    }
+    @keyframes zoomIn { from { transform: scale(0.85); opacity:0; } to { transform: scale(1); opacity:1; } }
+    .lightbox-caption { color: var(--gray); font-size: 0.85rem; text-align: center; }
+    .lightbox-controls { display: flex; gap: 12px; }
+    .lb-btn {
+      padding: 10px 20px; background: var(--navy-card);
+      border: 1px solid var(--glass-border); color: var(--white);
+      border-radius: var(--radius-sm); cursor: pointer; font-size: 1rem;
+      transition: all var(--transition);
+    }
+    .lb-btn:hover { border-color: var(--electric); color: var(--electric); }
+    .lb-close {
+      position: fixed; top: 24px; right: 24px;
+      width: 44px; height: 44px; background: var(--navy-card);
+      border: 1px solid var(--glass-border); color: var(--white);
+      border-radius: 50%; cursor: pointer; font-size: 1.2rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: all var(--transition);
+    }
+    .lb-close:hover { border-color: var(--danger); color: var(--danger); }
+    @media (max-width: 640px) {
+      .lightbox-img { max-width: 90vw; max-height: 60vh; font-size: 6rem; padding: 24px 32px; }
+      .lb-close { top: 14px; right: 14px; width: 38px; height: 38px; }
+      .gallery-masonry { column-gap: 8px; }
+      .gallery-thumb { margin-bottom: 8px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+  <div class="page-banner">
+    <div class="diagonal-stripe"></div>
+    <div class="container">
+      <div class="breadcrumb"><a href="index.html">Inicio</a> / Galería</div>
+      <h1>Galería</h1>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container">
+      <!-- Filters -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:32px;" class="fade-up" id="filters">
+        <button class="btn btn-primary btn-sm active-filter" onclick="filterGallery('', this)">Todos</button>
+        <button class="btn btn-outline btn-sm" onclick="filterGallery('Partido', this)">⚽ Partidos</button>
+        <button class="btn btn-outline btn-sm" onclick="filterGallery('Cancha', this)">🏟️ Estadios</button>
+        <button class="btn btn-outline btn-sm" onclick="filterGallery('Jugadores', this)">👕 Jugadores</button>
+        <button class="btn btn-outline btn-sm" onclick="filterGallery('Premiación', this)">🏆 Premiaciones</button>
+      </div>
+
+      <div class="gallery-masonry" id="galleryGrid"></div>
+
+      <!-- Load more -->
+      <div style="text-align:center;margin-top:40px;">
+        <button class="btn btn-outline" id="loadMoreBtn" onclick="loadMore()">
+          ⬇ Cargar más fotos
+        </button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <button class="lb-close" onclick="closeLightbox()">✕</button>
+  <div class="lightbox-img" id="lbImg"></div>
+  <div class="lightbox-caption" id="lbCaption"></div>
+  <div class="lightbox-controls">
+    <button class="lb-btn" onclick="prevPhoto()">← Anterior</button>
+    <button class="lb-btn" onclick="nextPhoto()">Siguiente →</button>
+  </div>
+</div>
+
+<script src="js/shared.js"></script>
+<script>
+const photos = [
+  { emoji:'⚽', cat:'Partido', caption:'Golazo de Carlos Herrera - Jornada 3', h:220 },
+  { emoji:'🏟️', cat:'Cancha', caption:'Estadio Municipal - Vista panorámica', h:280 },
+  { emoji:'👕', cat:'Jugadores', caption:'FC Durango - Plantilla completa', h:180 },
+  { emoji:'🏆', cat:'Premiación', caption:'Ceremonia de premiación Jornada 4', h:240 },
+  { emoji:'🥅', cat:'Partido', caption:'Atajada del año - Roberto Salinas', h:200 },
+  { emoji:'🎯', cat:'Partido', caption:'Asistencia de lujo - Miguel Ángel Ruiz', h:260 },
+  { emoji:'🌟', cat:'Jugadores', caption:'Fernando Castillo - Jugador destaque', h:190 },
+  { emoji:'📸', cat:'Cancha', caption:'Unidad Deportiva Norte - Nocturno', h:220 },
+  { emoji:'⚡', cat:'Partido', caption:'Remate Iván Córdova - Jornada 2', h:250 },
+  { emoji:'🎊', cat:'Premiación', caption:'Campeones de la Jornada', h:200 },
+  { emoji:'🛡️', cat:'Jugadores', caption:'Línea defensiva Toros del Norte', h:230 },
+  { emoji:'🔥', cat:'Partido', caption:'Clásico FC Durango vs Toros del Norte', h:270 },
+  { emoji:'👏', cat:'Premiación', caption:'Entrega de trofeos', h:210 },
+  { emoji:'🏃', cat:'Partido', caption:'Carrera contrarreloj - Jornada 4', h:190 },
+  { emoji:'🎽', cat:'Jugadores', caption:'Uniformes DIMA CUP 2025', h:240 },
+  { emoji:'🌄', cat:'Cancha', caption:'Campo Olímpico - Amanecer', h:260 },
+];
+
+let displayed = 8;
+let currentFilter = '';
+let currentIndex = 0;
+let filteredPhotos = [];
+
+function getFiltered() {
+  return currentFilter ? photos.filter(p => p.cat === currentFilter) : photos;
+}
+
+function renderGallery() {
+  filteredPhotos = getFiltered();
+  const subset = filteredPhotos.slice(0, displayed);
+  document.getElementById('galleryGrid').innerHTML = subset.map((p, i) => `
+    <div class="gallery-thumb fade-up" onclick="openLightbox(${i})" data-cat="${p.cat}">
+      <div class="gallery-thumb-inner" style="height:${p.h}px;">
+        ${p.emoji}
+      </div>
+      <div class="gallery-thumb-overlay">
+        <div class="icon">🔍</div>
+        <div class="label">${p.caption.slice(0, 24)}...</div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('loadMoreBtn').style.display =
+    displayed >= filteredPhotos.length ? 'none' : '';
+  setTimeout(initScrollReveal, 100);
+}
+
+function filterGallery(cat, btn) {
+  currentFilter = cat;
+  displayed = 8;
+  document.querySelectorAll('#filters button').forEach(b => {
+    b.className = 'btn btn-outline btn-sm';
+  });
+  btn.className = 'btn btn-primary btn-sm';
+  renderGallery();
+}
+
+function loadMore() {
+  displayed = Math.min(displayed + 4, filteredPhotos.length);
+  renderGallery();
+}
+
+function openLightbox(i) {
+  currentIndex = i;
+  filteredPhotos = getFiltered();
+  const p = filteredPhotos[i];
+  document.getElementById('lbImg').textContent = p.emoji;
+  document.getElementById('lbCaption').textContent = p.caption;
+  document.getElementById('lightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function nextPhoto() {
+  currentIndex = (currentIndex + 1) % filteredPhotos.length;
+  openLightbox(currentIndex);
+}
+
+function prevPhoto() {
+  currentIndex = (currentIndex - 1 + filteredPhotos.length) % filteredPhotos.length;
+  openLightbox(currentIndex);
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+  if (!document.getElementById('lightbox').classList.contains('open')) return;
+  if (e.key === 'Escape') closeLightbox();
+  if (e.key === 'ArrowRight') nextPhoto();
+  if (e.key === 'ArrowLeft') prevPhoto();
+});
+
+document.addEventListener('DOMContentLoaded', renderGallery);
+</script>
+</body>
+</html>

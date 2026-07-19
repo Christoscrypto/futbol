@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Admin — DIMA CUP 2025</title>
+  <link rel="stylesheet" href="css/global.css">
+  <style>
+    .admin-layout { display: grid; grid-template-columns: 240px 1fr; min-height: calc(100vh - var(--nav-height)); }
+    .admin-sidebar {
+      background: var(--navy-mid); border-right: 1px solid var(--glass-border);
+      padding: 32px 0; position: sticky; top: var(--nav-height);
+      height: calc(100vh - var(--nav-height)); overflow-y: auto;
+    }
+    .admin-sidebar .section-title { font-size: 0.6rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--gray-dark); padding: 0 20px; margin: 20px 0 8px; }
+    .admin-sidebar a {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 20px; color: var(--gray);
+      text-decoration: none; font-size: 0.82rem; font-weight: 500;
+      transition: all var(--transition); border-left: 3px solid transparent;
+    }
+    .admin-sidebar a:hover, .admin-sidebar a.active { color: var(--white); background: rgba(255,255,255,0.08); border-left-color: var(--electric); }
+    .admin-content { padding: 40px; }
+    .admin-panel { display: none; }
+    .admin-panel.active { display: block; }
+
+    /* Login */
+    .login-overlay { position: fixed; inset: 0; z-index: 800; background: rgba(4,10,22,0.97); display: flex; align-items: center; justify-content: center; }
+    .login-box { background: var(--navy-card); border: 1px solid var(--glass-border); border-radius: var(--radius-xl); padding: 48px 40px; width: 100%; max-width: 420px; text-align: center; }
+
+    .admin-table-wrap { overflow-x: auto; border: 1px solid var(--glass-border); border-radius: var(--radius-md); }
+    .crud-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; z-index: 900; background: rgba(4,10,22,0.85); display: none; align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.open { display: flex; }
+    .modal-box { background: var(--navy-card); border: 1px solid var(--glass-border); border-radius: var(--radius-xl); padding: 40px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+    .modal-box h3 { font-family: var(--font-display); font-size: 1.5rem; letter-spacing: 2px; color: var(--white); margin-bottom: 24px; }
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .field label { font-size: 0.65rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gray); }
+
+    /* KPI */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 16px; margin-bottom: 40px; }
+    .kpi-card { background: var(--navy-card); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 20px; }
+    .kpi-num { font-family: var(--font-display); font-size: 2.5rem; letter-spacing: 2px; color: var(--gold); }
+    .kpi-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gray); margin-top: 4px; }
+
+    /* Botones de acción en tabla */
+    .btn-edit { background: rgba(255,255,255,0.12); color: var(--electric); border: 1px solid rgba(255,255,255,0.3); border-radius: var(--radius-sm); padding: 5px 10px; cursor: pointer; font-size: 0.75rem; font-weight: 600; transition: all var(--transition); }
+    .btn-edit:hover { background: rgba(255,255,255,0.25); }
+    .btn-del  { background: rgba(255,59,92,0.12); color: var(--danger); border: 1px solid rgba(255,59,92,0.3); border-radius: var(--radius-sm); padding: 5px 10px; cursor: pointer; font-size: 0.75rem; font-weight: 600; transition: all var(--transition); }
+    .btn-del:hover  { background: rgba(255,59,92,0.25); }
+    .btn-result { background: rgba(212,212,212,0.12); color: var(--gold); border: 1px solid rgba(212,212,212,0.3); border-radius: var(--radius-sm); padding: 5px 10px; cursor: pointer; font-size: 0.75rem; font-weight: 600; transition: all var(--transition); }
+    .btn-result:hover { background: rgba(212,212,212,0.25); }
+
+    /* Confirm dialog */
+    .confirm-box { background: var(--navy-card); border: 1px solid rgba(255,59,92,0.4); border-radius: var(--radius-lg); padding: 32px; width: 100%; max-width: 380px; text-align: center; }
+
+    @media (max-width: 768px) {
+      .admin-layout { grid-template-columns: 1fr; }
+      .admin-sidebar { position: static; height: auto; }
+    }
+    @media (max-width: 480px) {
+      .admin-content { padding: 20px 16px; }
+      .modal-box { padding: 20px; max-width: 100%; }
+      .login-box { padding: 32px 22px; }
+      .kpi-grid { grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap: 10px; }
+      .kpi-num { font-size: 2rem; }
+      .crud-bar input.input { width: 100% !important; }
+      .modal-box [style*="grid-template-columns:1fr 1fr 1fr 1fr;gap"] { grid-template-columns: 1fr 1fr !important; }
+      .modal-box [style*="grid-template-columns:1fr 1fr 1fr;gap"] { grid-template-columns: 1fr 1fr !important; }
+      .modal-box [style*="grid-template-columns:1fr 1fr;gap"] { grid-template-columns: 1fr !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+
+  <!-- Login -->
+  <div class="login-overlay" id="loginOverlay">
+    <div class="login-box">
+      <div style="font-size:3rem;margin-bottom:16px;">🔐</div>
+      <div style="font-family:var(--font-display);font-size:2rem;letter-spacing:3px;color:var(--gold);margin-bottom:4px;">DIMA CUP</div>
+      <div style="font-size:0.7rem;color:var(--gray);letter-spacing:2px;text-transform:uppercase;margin-bottom:32px;">Panel Administrativo</div>
+      <div style="display:flex;flex-direction:column;gap:16px;text-align:left;">
+        <div class="field"><label>Usuario</label><input type="text" class="input" id="loginUser" placeholder="admin" value="admin"></div>
+        <div class="field"><label>Contraseña</label><input type="password" class="input" id="loginPass" placeholder="••••••" value="1234"></div>
+        <div id="loginError" style="color:var(--danger);font-size:0.8rem;display:none;">Usuario o contraseña incorrectos</div>
+        <button class="btn btn-primary" style="justify-content:center;" onclick="doLogin()">Iniciar sesión →</button>
+        <p style="font-size:0.7rem;color:var(--gray-dark);text-align:center;">Demo: admin / 1234</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <div class="admin-sidebar">
+      <div style="padding:0 20px 24px;border-bottom:1px solid var(--glass-border);margin-bottom:8px;">
+        <div style="font-family:var(--font-display);font-size:1.2rem;letter-spacing:2px;color:var(--gold);">DIMA CUP</div>
+        <div style="font-size:0.65rem;color:var(--gray);">Panel Admin 2025</div>
+      </div>
+      <div class="section-title">Principal</div>
+      <a href="#" class="active" onclick="showPanel('dashboard',this)">📊 Dashboard</a>
+      <div class="section-title">Gestión</div>
+      <a href="#" onclick="showPanel('equipos',this)">👕 Equipos</a>
+      <a href="#" onclick="showPanel('jugadores',this)">⚽ Jugadores</a>
+      <a href="#" onclick="showPanel('partidos',this)">📅 Partidos</a>
+      <a href="#" onclick="showPanel('noticias',this)">📰 Noticias</a>
+      <div class="section-title">Sistema</div>
+      <a href="#" onclick="resetData()">🔄 Restaurar datos</a>
+      <a href="index.html">🌐 Ver sitio</a>
+      <a href="#" onclick="doLogout()">🚪 Cerrar sesión</a>
+    </div>
+
+    <!-- Contenido -->
+    <div class="admin-content">
+
+      <!-- DASHBOARD -->
+      <div class="admin-panel active" id="panel-dashboard">
+        <div style="margin-bottom:32px;">
+          <div style="font-family:var(--font-display);font-size:2rem;letter-spacing:3px;color:var(--white);">Dashboard</div>
+          <div style="font-size:0.8rem;color:var(--gray);">Bienvenido al panel de administración del DIMA CUP 2025</div>
+        </div>
+        <div class="kpi-grid" id="kpiGrid"></div>
+        <div style="background:var(--navy-card);border:1px solid var(--glass-border);border-radius:var(--radius-md);padding:24px;">
+          <div style="font-size:0.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin-bottom:16px;">Actividad reciente</div>
+          <div id="activityLog"></div>
+        </div>
+      </div>
+
+      <!-- EQUIPOS -->
+      <div class="admin-panel" id="panel-equipos">
+        <div class="crud-bar">
+          <div>
+            <div style="font-family:var(--font-display);font-size:1.8rem;letter-spacing:2px;color:var(--white);">Equipos</div>
+            <div id="equiposCount" style="font-size:0.75rem;color:var(--gray);"></div>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <input type="text" class="input" placeholder="Buscar..." id="searchEq" style="width:180px;" oninput="renderEquiposTable()">
+            <button class="btn btn-primary btn-sm" onclick="openEquipoModal(null)">+ Nuevo equipo</button>
+          </div>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="dc-table">
+            <thead><tr><th>Escudo</th><th>Nombre</th><th>Ciudad</th><th>Categoría</th><th>Grupo</th><th>PJ</th><th>PTS</th><th>Acciones</th></tr></thead>
+            <tbody id="equiposTbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- JUGADORES -->
+      <div class="admin-panel" id="panel-jugadores">
+        <div class="crud-bar">
+          <div>
+            <div style="font-family:var(--font-display);font-size:1.8rem;letter-spacing:2px;color:var(--white);">Jugadores</div>
+            <div id="jugadoresCount" style="font-size:0.75rem;color:var(--gray);"></div>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <input type="text" class="input" placeholder="Buscar jugador..." id="searchJug" style="width:180px;" oninput="renderJugadoresTable()">
+            <button class="btn btn-primary btn-sm" onclick="openJugadorModal(null)">+ Nuevo jugador</button>
+          </div>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="dc-table">
+            <thead><tr><th>#</th><th>Nombre</th><th>Equipo</th><th>Posición</th><th>Goles</th><th>Asist</th><th>🟨</th><th>🟥</th><th>Acciones</th></tr></thead>
+            <tbody id="jugadoresTbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PARTIDOS -->
+      <div class="admin-panel" id="panel-partidos">
+        <div class="crud-bar">
+          <div>
+            <div style="font-family:var(--font-display);font-size:1.8rem;letter-spacing:2px;color:var(--white);">Partidos</div>
+            <div id="partidosCount" style="font-size:0.75rem;color:var(--gray);"></div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openPartidoModal(null)">+ Nuevo partido</button>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="dc-table">
+            <thead><tr><th>J</th><th>Fase</th><th>Local</th><th>Marcador</th><th>Visitante</th><th>Fecha</th><th>Cancha</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="partidosTbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- NOTICIAS -->
+      <div class="admin-panel" id="panel-noticias">
+        <div class="crud-bar">
+          <div>
+            <div style="font-family:var(--font-display);font-size:1.8rem;letter-spacing:2px;color:var(--white);">Noticias</div>
+            <div id="noticiasCount" style="font-size:0.75rem;color:var(--gray);"></div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openNoticiaModal(null)">+ Nueva noticia</button>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="dc-table">
+            <thead><tr><th>Emoji</th><th>Título</th><th>Categoría</th><th>Fecha</th><th>Acciones</th></tr></thead>
+            <tbody id="noticiasTbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── MODALES ── -->
+
+  <!-- Equipo -->
+  <div class="modal-overlay" id="equipoModal">
+    <div class="modal-box">
+      <h3 id="equipoModalTitle">Equipo</h3>
+      <input type="hidden" id="eqId">
+      <input type="hidden" id="eqImg">
+      <div class="field">
+        <label>Escudo (imagen) — se optimiza automáticamente al subirla</label>
+        <div style="display:flex;align-items:center;gap:14px;">
+          <img id="eqImgPreview" src="" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--glass-border);display:none;">
+          <span id="eqImgEmojiPreview" style="font-size:2.5rem;line-height:1;">🔵</span>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <input type="file" accept="image/*" id="eqImgFile" onchange="handleImageUpload(event, 'eqImg', 'eqImgPreview', 'eqImgEmojiPreview')">
+            <button type="button" class="btn btn-outline btn-sm" style="display:none;" id="eqImgClearBtn" onclick="clearEquipoImage()">🗑️ Quitar imagen</button>
+          </div>
+        </div>
+      </div>
+      <div class="field"><label>Emoji / Escudo (si no subes imagen)</label><input type="text" class="input" id="eqEmoji" placeholder="🔵" maxlength="4" oninput="document.getElementById('eqImgEmojiPreview').textContent = this.value || '🔵'"></div>
+      <div class="field"><label>Nombre del equipo</label><input type="text" class="input" id="eqName" placeholder="Nombre completo"></div>
+      <div class="field"><label>Abreviación (3 letras)</label><input type="text" class="input" id="eqShort" placeholder="DUR" maxlength="4"></div>
+      <div class="field"><label>Ciudad</label><input type="text" class="input" id="eqCity" placeholder="Durango"></div>
+      <div class="field"><label>Categoría</label>
+        <select class="select" id="eqCat">
+          <option value="Premier">Premier</option>
+          <option value="División A">División A</option>
+        </select>
+      </div>
+      <div class="field"><label>Grupo (fase de grupos)</label>
+        <select class="select" id="eqGrupo">
+          <option value="A">Grupo A</option>
+          <option value="B">Grupo B</option>
+          <option value="C">Grupo C</option>
+          <option value="D">Grupo D</option>
+          <option value="E">Grupo E</option>
+          <option value="F">Grupo F</option>
+          <option value="G">Grupo G</option>
+          <option value="H">Grupo H</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Colores del equipo (personalizan su ficha)</label>
+        <div style="display:flex;gap:16px;align-items:center;">
+          <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
+            <input type="color" id="eqColor1" value="#FFFFFF" oninput="updateEqColorPreview()" style="width:48px;height:36px;border:1px solid var(--glass-border);border-radius:6px;background:none;cursor:pointer;">
+            <span style="font-size:0.6rem;color:var(--gray);">Primario</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
+            <input type="color" id="eqColor2" value="#D4D4D4" oninput="updateEqColorPreview()" style="width:48px;height:36px;border:1px solid var(--glass-border);border-radius:6px;background:none;cursor:pointer;">
+            <span style="font-size:0.6rem;color:var(--gray);">Secundario</span>
+          </div>
+          <div id="eqColorPreview" style="flex:1;height:36px;border-radius:6px;background:linear-gradient(135deg,#FFFFFF,#D4D4D4);"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button class="btn btn-primary btn-sm" onclick="saveEquipo()">Guardar equipo</button>
+        <button class="btn btn-outline btn-sm" onclick="closeModal('equipoModal')">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Jugador -->
+  <div class="modal-overlay" id="jugadorModal">
+    <div class="modal-box">
+      <h3 id="jugadorModalTitle">Jugador</h3>
+      <input type="hidden" id="jugId">
+      <input type="hidden" id="jugImg">
+      <div class="field">
+        <label>Foto del jugador — se optimiza automáticamente al subirla</label>
+        <div style="display:flex;align-items:center;gap:14px;">
+          <img id="jugImgPreview" src="" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:50%;border:1px solid var(--glass-border);display:none;">
+          <span id="jugImgEmojiPreview" style="font-size:2.5rem;line-height:1;">⚽</span>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <input type="file" accept="image/*" id="jugImgFile" onchange="handleImageUpload(event, 'jugImg', 'jugImgPreview', 'jugImgEmojiPreview')">
+            <button type="button" class="btn btn-outline btn-sm" style="display:none;" id="jugImgClearBtn" onclick="clearJugadorImage()">🗑️ Quitar foto</button>
+          </div>
+        </div>
+      </div>
+      <div class="field"><label>Emoji (si no subes foto)</label><input type="text" class="input" id="jugEmoji" placeholder="⚽" maxlength="4" oninput="document.getElementById('jugImgEmojiPreview').textContent = this.value || '⚽'"></div>
+      <div class="field"><label>Nombre completo</label><input type="text" class="input" id="jugName" placeholder="Nombre Apellido"></div>
+      <div class="field"><label>Nombre corto</label><input type="text" class="input" id="jugShort" placeholder="Apellido"></div>
+      <div class="field"><label>Equipo</label><select class="select" id="jugTeam"></select></div>
+      <div class="field"><label>Posición</label>
+        <select class="select" id="jugPos">
+          <option>Portero</option><option>Defensa</option><option>Mediocampista</option><option>Delantero</option>
+        </select>
+      </div>
+      <div class="field"><label>Número de dorsal</label><input type="number" class="input" id="jugNum" placeholder="1–99" min="1" max="99"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field"><label>Fecha de nacimiento</label><input type="date" class="input" id="jugNacimiento"></div>
+        <div class="field"><label>Nacionalidad</label><input type="text" class="input" id="jugNacionalidad" placeholder="🇲🇽 México"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field"><label>Altura (cm)</label><input type="number" class="input" id="jugAltura" placeholder="178" min="120" max="230"></div>
+        <div class="field"><label>Pie dominante</label>
+          <select class="select" id="jugPie">
+            <option value="Derecho">Derecho</option>
+            <option value="Izquierdo">Izquierdo</option>
+            <option value="Ambidiestro">Ambidiestro</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Biografía (opcional, si no se deja una genérica según su posición)</label><textarea class="input" id="jugBio" rows="3" placeholder="Ej. Formado en las fuerzas básicas del equipo, destaca por su velocidad y remate de media distancia..."></textarea></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">
+        <div class="field"><label>Goles</label><input type="number" class="input" id="jugGoles" value="0" min="0"></div>
+        <div class="field"><label>Asist.</label><input type="number" class="input" id="jugAsist" value="0" min="0"></div>
+        <div class="field"><label>🟨</label><input type="number" class="input" id="jugAmar" value="0" min="0"></div>
+        <div class="field"><label>🟥</label><input type="number" class="input" id="jugRoja" value="0" min="0"></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button class="btn btn-primary btn-sm" onclick="saveJugador()">Guardar jugador</button>
+        <button class="btn btn-outline btn-sm" onclick="closeModal('jugadorModal')">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Partido -->
+  <div class="modal-overlay" id="partidoModal">
+    <div class="modal-box">
+      <h3 id="partidoModalTitle">Partido</h3>
+      <input type="hidden" id="parId">
+      <div class="field"><label>Fase</label>
+        <select class="select" id="parFase" onchange="toggleFaseFields()">
+          <option value="Grupos">Fase de Grupos</option>
+          <option value="Octavos de Final">Octavos de Final</option>
+          <option value="Cuartos de Final">Cuartos de Final</option>
+          <option value="Semifinal">Semifinal</option>
+          <option value="Tercer Lugar">Tercer Lugar</option>
+          <option value="Final">Final</option>
+        </select>
+      </div>
+      <div class="field" id="parJornadaField"><label>Jornada</label><input type="number" class="input" id="parJornada" placeholder="1" min="1"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field"><label>Equipo Local</label><select class="select" id="parLocal" onchange="updateEventoTeamOptions()"></select></div>
+        <div class="field"><label>Equipo Visitante</label><select class="select" id="parVisit" onchange="updateEventoTeamOptions()"></select></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field"><label>Fecha</label><input type="date" class="input" id="parFecha"></div>
+        <div class="field"><label>Hora</label><input type="time" class="input" id="parHora"></div>
+      </div>
+      <div class="field"><label>Cancha</label><input type="text" class="input" id="parCancha" placeholder="Estadio Municipal"></div>
+      <div class="field"><label>Estado</label>
+        <select class="select" id="parEstado" onchange="toggleResultFields()">
+          <option value="Programado">Programado</option>
+          <option value="Finalizado">Finalizado</option>
+        </select>
+      </div>
+      <div id="resultFields" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;align-items:end;">
+          <div class="field"><label>Goles Local</label><input type="number" class="input" id="parGL" value="0" min="0"></div>
+          <div style="text-align:center;padding-bottom:6px;font-family:var(--font-display);color:var(--gold);font-size:1.5rem;">—</div>
+          <div class="field"><label>Goles Visitante</label><input type="number" class="input" id="parGV" value="0" min="0"></div>
+        </div>
+        <div class="field"><label>MVP del partido</label><select class="select" id="parMvp"><option value="">Sin MVP</option></select></div>
+
+        <div class="field">
+          <label>Eventos del partido (goles, tarjetas, asistencias)</label>
+          <div id="eventosList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;"></div>
+          <div style="background:var(--navy-mid);border:1px solid var(--glass-border);border-radius:var(--radius-sm);padding:12px;display:flex;flex-direction:column;gap:8px;">
+            <div style="display:grid;grid-template-columns:70px 1fr;gap:8px;">
+              <input type="number" class="input" id="evMinuto" placeholder="Min" min="0" max="130">
+              <select class="select" id="evTipo" onchange="updateEventoPlayerOptions()">
+                <option value="Gol">⚽ Gol</option>
+                <option value="Autogol">⚽ Autogol</option>
+                <option value="Asistencia">🎯 Asistencia</option>
+                <option value="Amarilla">🟨 Tarjeta amarilla</option>
+                <option value="Roja">🟥 Tarjeta roja</option>
+              </select>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <select class="select" id="evEquipo" onchange="updateEventoPlayerOptions()"></select>
+              <select class="select" id="evJugador"><option value="">Sin especificar</option></select>
+            </div>
+            <input type="text" class="input" id="evNota" placeholder="Nota (opcional, ej. tiro libre)">
+            <button type="button" class="btn btn-outline btn-sm" onclick="addEvento()" style="justify-content:center;">+ Agregar evento</button>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button class="btn btn-primary btn-sm" onclick="savePartido()">Guardar partido</button>
+        <button class="btn btn-outline btn-sm" onclick="closeModal('partidoModal')">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Noticia -->
+  <div class="modal-overlay" id="noticiaModal">
+    <div class="modal-box">
+      <h3 id="noticiaModalTitle">Noticia</h3>
+      <input type="hidden" id="notId">
+      <div class="field"><label>Emoji</label><input type="text" class="input" id="notEmoji" placeholder="📰" maxlength="4"></div>
+      <div class="field"><label>Título</label><input type="text" class="input" id="notTitle" placeholder="Título de la noticia"></div>
+      <div class="field"><label>Categoría</label>
+        <select class="select" id="notCat">
+          <option>Resultados</option><option>Estadísticas</option><option>Torneo</option>
+          <option>Premios</option><option>Inscripciones</option><option>Infraestructura</option>
+        </select>
+      </div>
+      <div class="field"><label>Fecha</label><input type="date" class="input" id="notDate"></div>
+      <div class="field"><label>Resumen</label><textarea class="input" rows="3" id="notExcerpt" placeholder="Resumen breve..."></textarea></div>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button class="btn btn-primary btn-sm" onclick="saveNoticia()">Publicar noticia</button>
+        <button class="btn btn-outline btn-sm" onclick="closeModal('noticiaModal')">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm delete -->
+  <div class="modal-overlay" id="confirmModal">
+    <div class="confirm-box">
+      <div style="font-size:2.5rem;margin-bottom:12px;">⚠️</div>
+      <div style="font-family:var(--font-display);font-size:1.3rem;letter-spacing:2px;color:var(--white);margin-bottom:8px;">¿Eliminar?</div>
+      <div id="confirmMsg" style="font-size:0.85rem;color:var(--gray);margin-bottom:24px;"></div>
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button class="btn btn-sm" style="background:var(--danger);color:white;border:none;border-radius:var(--radius-sm);padding:8px 20px;cursor:pointer;" id="confirmYes">Sí, eliminar</button>
+        <button class="btn btn-outline btn-sm" onclick="closeModal('confirmModal')">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page-wrapper -->
+
+<script src="js/shared.js"></script>
+<script>
+/* ── Auth ── */
+async function doLogin() {
+  const u = document.getElementById('loginUser').value;
+  const p = document.getElementById('loginPass').value;
+  if (u === 'admin' && p === '1234') {
+    const btn = document.querySelector('.login-box .btn');
+    if (btn) { btn.textContent = 'Conectando con la base de datos…'; btn.disabled = true; }
+    try {
+      await DC.ready;
+      document.getElementById('loginOverlay').style.display = 'none';
+      initAdmin();
+    } catch (e) {
+      showToast('⚠️ No se pudo conectar con la base de datos. Revisa la variable MONGODB_URI en Netlify.');
+    } finally {
+      if (btn) { btn.textContent = 'Iniciar sesión →'; btn.disabled = false; }
+    }
+  } else {
+    const err = document.getElementById('loginError');
+    err.style.display = 'block';
+    setTimeout(() => err.style.display = 'none', 2000);
+  }
+}
+function doLogout() { document.getElementById('loginOverlay').style.display = 'flex'; }
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('loginOverlay').style.display !== 'none') doLogin();
+});
+
+/* ── Panel switch ── */
+function showPanel(name, el) {
+  document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.admin-sidebar a').forEach(a => a.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  if (el) el.classList.add('active');
+  refreshPanel(name);
+}
+
+function refreshPanel(name) {
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'equipos')   renderEquiposTable();
+  if (name === 'jugadores') renderJugadoresTable();
+  if (name === 'partidos')  renderPartidosTable();
+  if (name === 'noticias')  renderNoticiasTable();
+}
+
+/* ── Modales ── */
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('modal-overlay')) e.target.classList.remove('open');
+});
+
+function confirmDelete(msg, onConfirm) {
+  document.getElementById('confirmMsg').textContent = msg;
+  document.getElementById('confirmYes').onclick = () => { onConfirm(); closeModal('confirmModal'); };
+  openModal('confirmModal');
+}
+
+/* ── DASHBOARD ── */
+function renderDashboard() {
+  const f = DC.matches.filter(m => m.estado === 'Finalizado');
+  const kpis = [
+    ['Equipos',        DC.teams.length,          '↑ En competencia', 'var(--success)'],
+    ['Jugadores',      DC.players.length,         '↑ Registrados',    'var(--success)'],
+    ['Jugados',        f.length,                  'Partidos finalizados', 'var(--electric)'],
+    ['Por Jugar',      DC.matches.length - f.length, 'Pendientes',     'var(--gold)'],
+    ['Total Goles',    f.reduce((s,m)=>s+m.gL+m.gV,0), 'En el torneo', 'var(--gold)'],
+    ['Noticias',       DC.news.length,            'Publicadas',       'var(--gray)'],
+  ];
+  document.getElementById('kpiGrid').innerHTML = kpis.map(([l,v,t,c]) => `
+    <div class="kpi-card">
+      <div class="kpi-num" style="color:${c};">${v}</div>
+      <div class="kpi-label">${l}</div>
+      <div style="font-size:0.72rem;color:var(--gray);margin-top:6px;">${t}</div>
+    </div>`).join('');
+
+  const lastMatches = DC.matches.filter(m => m.estado === 'Finalizado').slice(-3).reverse();
+  document.getElementById('activityLog').innerHTML = [
+    ...lastMatches.map(m => {
+      const l = DC.getTeam(m.local), v = DC.getTeam(m.visit);
+      return { text: `Resultado registrado: ${l?.name} ${m.gL}–${m.gV} ${v?.name}`, color: 'var(--success)' };
+    }),
+    { text: `${DC.teams.length} equipos activos en el torneo`, color: 'var(--electric)' },
+    { text: `${DC.players.length} jugadores registrados`, color: 'var(--gold)' },
+  ].map(a => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--glass-border);">
+      <div style="width:8px;height:8px;border-radius:50%;background:${a.color};flex-shrink:0;"></div>
+      <div style="flex:1;font-size:0.82rem;color:var(--white);">${a.text}</div>
+    </div>`).join('');
+}
+
+/* ── Manejo de imágenes (equipos/jugadores) ──
+   Antes se guardaba el archivo tal cual (base64 sin comprimir), lo que podía
+   dejar fotos de varios MB pesando la base de datos y ralentizando el sitio.
+   Ahora toda imagen se redimensiona y comprime en el navegador (canvas) antes
+   de guardarse: escudos a máx. 420px y fotos de jugador a máx. 480px de lado,
+   exportadas en WebP (o el mejor formato que soporte el navegador). */
+const IMG_MAX_DIM = { eqImg: 420, jugImg: 480 };
+const IMG_UPLOAD_LIMIT_MB = 8; // límite del archivo ORIGINAL, antes de comprimir
+
+function handleImageUpload(event, hiddenId, previewImgId, previewEmojiId) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { showToast('Selecciona un archivo de imagen válido'); event.target.value = ''; return; }
+  if (file.size > IMG_UPLOAD_LIMIT_MB * 1024 * 1024) { showToast(`La imagen es muy pesada (máx. ${IMG_UPLOAD_LIMIT_MB}MB)`); event.target.value = ''; return; }
+
+  const originalKB = Math.round(file.size / 1024);
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const maxDim = IMG_MAX_DIM[hiddenId] || 450;
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        if (width >= height) { height = Math.round(height * (maxDim / width)); width = maxDim; }
+        else { width = Math.round(width * (maxDim / height)); height = maxDim; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+
+      // WebP conserva transparencia y comprime mucho mejor que PNG/JPEG.
+      // Si el navegador no lo soporta, toDataURL cae solo a PNG.
+      const optimized = canvas.toDataURL('image/webp', 0.85);
+
+      document.getElementById(hiddenId).value = optimized;
+      const previewEl = document.getElementById(previewImgId);
+      previewEl.src = optimized;
+      previewEl.style.display = '';
+      document.getElementById(previewEmojiId).style.display = 'none';
+      const clearBtnId = hiddenId === 'eqImg' ? 'eqImgClearBtn' : 'jugImgClearBtn';
+      const clearBtn = document.getElementById(clearBtnId);
+      if (clearBtn) clearBtn.style.display = '';
+
+      const optimizedKB = Math.max(1, Math.round((optimized.length * 0.75) / 1024));
+      const ahorro = originalKB > optimizedKB ? Math.round((1 - optimizedKB / originalKB) * 100) : 0;
+      showToast(`✅ Imagen optimizada: ${originalKB}KB → ${optimizedKB}KB${ahorro > 0 ? ` (-${ahorro}%)` : ''}`);
+    };
+    img.onerror = () => showToast('⚠️ No se pudo procesar la imagen, intenta con otro archivo');
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearEquipoImage() {
+  document.getElementById('eqImg').value = '';
+  document.getElementById('eqImgFile').value = '';
+  document.getElementById('eqImgPreview').style.display = 'none';
+  document.getElementById('eqImgEmojiPreview').style.display = '';
+  document.getElementById('eqImgClearBtn').style.display = 'none';
+}
+
+function clearJugadorImage() {
+  document.getElementById('jugImg').value = '';
+  document.getElementById('jugImgFile').value = '';
+  document.getElementById('jugImgPreview').style.display = 'none';
+  document.getElementById('jugImgEmojiPreview').style.display = '';
+  document.getElementById('jugImgClearBtn').style.display = 'none';
+}
+
+/* ── EQUIPOS ── */
+function renderEquiposTable() {
+  const q = (document.getElementById('searchEq')?.value || '').toLowerCase();
+  const list = DC.teams.filter(t => !q || t.name.toLowerCase().includes(q) || t.city.toLowerCase().includes(q));
+  document.getElementById('equiposCount').textContent = `${list.length} equipo${list.length !== 1 ? 's' : ''} registrado${list.length !== 1 ? 's' : ''}`;
+  document.getElementById('equiposTbody').innerHTML = list.map(t => `
+    <tr>
+      <td style="font-size:1.5rem;">${DC.crest(t, 40)}</td>
+      <td style="font-weight:700;color:var(--white);">${t.name} <span style="font-size:0.65rem;color:var(--gray);">(${t.short})</span></td>
+      <td style="color:var(--gray);">${t.city}</td>
+      <td><span class="badge ${t.cat==='Premier'?'badge-gold':'badge-scheduled'}">${t.cat}</span></td>
+      <td><span class="badge" style="background:rgba(255,255,255,0.15);color:var(--electric);">Grupo ${t.grupo || 'A'}</span></td>
+      <td style="color:var(--gray);">${t.pj}</td>
+      <td><span style="font-family:var(--font-display);color:var(--gold);">${t.pts}</span></td>
+      <td>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-edit" onclick="openEquipoModal(${t.id})">✏️ Editar</button>
+          <button class="btn-del" onclick="confirmDelete('¿Eliminar a ${t.name}? Esta acción no se puede deshacer.', async () => { await DC.deleteTeam(${t.id}); renderEquiposTable(); showToast('Equipo eliminado'); })">🗑️</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function openEquipoModal(id) {
+  document.getElementById('equipoModalTitle').textContent = id ? '✏️ Editar Equipo' : '➕ Nuevo Equipo';
+  const t = id ? DC.getTeam(id) : null;
+  document.getElementById('eqId').value    = t?.id    || '';
+  document.getElementById('eqEmoji').value = t?.emoji || '🔵';
+  document.getElementById('eqName').value  = t?.name  || '';
+  document.getElementById('eqShort').value = t?.short || '';
+  document.getElementById('eqCity').value  = t?.city  || '';
+  document.getElementById('eqCat').value   = t?.cat   || 'Premier';
+  document.getElementById('eqGrupo').value = t?.grupo || 'A';
+  document.getElementById('eqColor1').value = t?.color1 || '#FFFFFF';
+  document.getElementById('eqColor2').value = t?.color2 || '#D4D4D4';
+  updateEqColorPreview();
+
+  document.getElementById('eqImg').value = t?.img || '';
+  document.getElementById('eqImgFile').value = '';
+  const eqPreview = document.getElementById('eqImgPreview');
+  const eqEmojiPreview = document.getElementById('eqImgEmojiPreview');
+  const eqClearBtn = document.getElementById('eqImgClearBtn');
+  if (t?.img) {
+    eqPreview.src = t.img; eqPreview.style.display = ''; eqEmojiPreview.style.display = 'none'; eqClearBtn.style.display = '';
+  } else {
+    eqPreview.style.display = 'none'; eqEmojiPreview.style.display = ''; eqEmojiPreview.textContent = t?.emoji || '🔵'; eqClearBtn.style.display = 'none';
+  }
+
+  openModal('equipoModal');
+}
+
+function updateEqColorPreview() {
+  const c1 = document.getElementById('eqColor1').value;
+  const c2 = document.getElementById('eqColor2').value;
+  document.getElementById('eqColorPreview').style.background = `linear-gradient(135deg,${c1},${c2})`;
+}
+
+async function saveEquipo() {
+  const id    = document.getElementById('eqId').value;
+  const name  = document.getElementById('eqName').value.trim();
+  const emoji = document.getElementById('eqEmoji').value.trim();
+  const short = document.getElementById('eqShort').value.trim().toUpperCase();
+  const city  = document.getElementById('eqCity').value.trim();
+  const cat   = document.getElementById('eqCat').value;
+  const grupo = document.getElementById('eqGrupo').value;
+  const img   = document.getElementById('eqImg').value || '';
+  const color1 = document.getElementById('eqColor1').value || '#FFFFFF';
+  const color2 = document.getElementById('eqColor2').value || '#D4D4D4';
+  if (!name) { showToast('El nombre es obligatorio'); return; }
+
+  const existing = id ? DC.getTeam(id) : null;
+  const team = {
+    ...(existing || { pj:0,pg:0,pe:0,pp:0,gf:0,gc:0,pts:0 }),
+    id: id ? +id : undefined,
+    name, emoji: emoji||'🔵', short: short||name.slice(0,3).toUpperCase(), city, cat, grupo, img, color1, color2,
+  };
+  try {
+    await DC.saveTeam(team);
+    closeModal('equipoModal');
+    renderEquiposTable();
+    showToast(id ? `✅ ${name} actualizado` : `✅ ${name} agregado`);
+  } catch (e) {
+    showToast('⚠️ ' + e.message);
+  }
+}
+
+/* ── JUGADORES ── */
+function renderJugadoresTable() {
+  const q = (document.getElementById('searchJug')?.value || '').toLowerCase();
+  const list = DC.players.filter(p => !q || p.name.toLowerCase().includes(q));
+  document.getElementById('jugadoresCount').textContent = `${list.length} jugador${list.length !== 1 ? 'es' : ''} registrado${list.length !== 1 ? 's' : ''}`;
+  document.getElementById('jugadoresTbody').innerHTML = list.map(p => {
+    const team = DC.getTeam(p.team);
+    return `
+      <tr>
+        <td style="font-family:var(--font-display);color:var(--gray);">${p.num}</td>
+        <td style="font-weight:700;color:var(--white);">${DC.avatar(p, 32)} ${p.name}</td>
+        <td style="color:var(--gray);">${team ? team.emoji+' '+team.name : '—'}</td>
+        <td><span class="badge badge-scheduled" style="font-size:0.6rem;">${p.pos}</span></td>
+        <td style="color:var(--gold);font-weight:700;">${p.goles}</td>
+        <td style="color:var(--electric);">${p.asist}</td>
+        <td style="color:var(--gold);">${p.amarillas}</td>
+        <td style="color:var(--danger);">${p.rojas}</td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            <button class="btn-edit" onclick="openJugadorModal(${p.id})">✏️ Editar</button>
+            <button class="btn-del" onclick="confirmDelete('¿Eliminar a ${p.name}?', async () => { await DC.deletePlayer(${p.id}); renderJugadoresTable(); showToast('Jugador eliminado'); })">🗑️</button>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+function openJugadorModal(id) {
+  document.getElementById('jugadorModalTitle').textContent = id ? '✏️ Editar Jugador' : '➕ Nuevo Jugador';
+  const p = id ? DC.getPlayer(id) : null;
+  // Rellenar select de equipos
+  document.getElementById('jugTeam').innerHTML = DC.teams.map(t => `<option value="${t.id}">${t.emoji} ${t.name}</option>`).join('');
+  document.getElementById('jugId').value      = p?.id    || '';
+  document.getElementById('jugEmoji').value  = p?.emoji || '⚽';
+  document.getElementById('jugName').value    = p?.name  || '';
+  document.getElementById('jugShort').value   = p?.short || '';
+  document.getElementById('jugTeam').value    = p?.team  || DC.teams[0]?.id || 1;
+  document.getElementById('jugPos').value     = p?.pos   || 'Delantero';
+  document.getElementById('jugNum').value     = p?.num   || '';
+  document.getElementById('jugGoles').value   = p?.goles ?? 0;
+  document.getElementById('jugAsist').value   = p?.asist ?? 0;
+  document.getElementById('jugAmar').value    = p?.amarillas ?? 0;
+  document.getElementById('jugRoja').value    = p?.rojas ?? 0;
+  document.getElementById('jugNacimiento').value   = p?.nacimiento   || '';
+  document.getElementById('jugNacionalidad').value = p?.nacionalidad || '';
+  document.getElementById('jugAltura').value       = p?.altura       || '';
+  document.getElementById('jugPie').value          = p?.pie          || 'Derecho';
+  document.getElementById('jugBio').value          = p?.bio          || '';
+
+  document.getElementById('jugImg').value = p?.img || '';
+  document.getElementById('jugImgFile').value = '';
+  const jugPreview = document.getElementById('jugImgPreview');
+  const jugEmojiPreview = document.getElementById('jugImgEmojiPreview');
+  const jugClearBtn = document.getElementById('jugImgClearBtn');
+  if (p?.img) {
+    jugPreview.src = p.img; jugPreview.style.display = ''; jugEmojiPreview.style.display = 'none'; jugClearBtn.style.display = '';
+  } else {
+    jugPreview.style.display = 'none'; jugEmojiPreview.style.display = ''; jugEmojiPreview.textContent = p?.emoji || '⚽'; jugClearBtn.style.display = 'none';
+  }
+
+  openModal('jugadorModal');
+}
+
+async function saveJugador() {
+  const id   = document.getElementById('jugId').value;
+  const name = document.getElementById('jugName').value.trim();
+  if (!name) { showToast('El nombre es obligatorio'); return; }
+  const player = {
+    id: id ? +id : undefined,
+    emoji:     document.getElementById('jugEmoji').value.trim()  || '⚽',
+    name,
+    short:     document.getElementById('jugShort').value.trim()  || name.split(' ').pop(),
+    team:      +document.getElementById('jugTeam').value,
+    pos:       document.getElementById('jugPos').value,
+    num:       +document.getElementById('jugNum').value || 0,
+    goles:     +document.getElementById('jugGoles').value || 0,
+    asist:     +document.getElementById('jugAsist').value || 0,
+    amarillas: +document.getElementById('jugAmar').value  || 0,
+    rojas:     +document.getElementById('jugRoja').value  || 0,
+    img:       document.getElementById('jugImg').value || '',
+    nacimiento:   document.getElementById('jugNacimiento').value || null,
+    nacionalidad: document.getElementById('jugNacionalidad').value.trim() || null,
+    altura:       +document.getElementById('jugAltura').value || null,
+    pie:          document.getElementById('jugPie').value || 'Derecho',
+    bio:          document.getElementById('jugBio').value.trim() || null,
+  };
+  try {
+    await DC.savePlayer(player);
+    closeModal('jugadorModal');
+    renderJugadoresTable();
+    showToast(id ? `✅ ${name} actualizado` : `✅ ${name} registrado`);
+  } catch (e) {
+    showToast('⚠️ ' + e.message);
+  }
+}
+
+/* ── PARTIDOS ── */
+function toggleResultFields() {
+  const estado = document.getElementById('parEstado').value;
+  document.getElementById('resultFields').style.display = estado === 'Finalizado' ? '' : 'none';
+}
+
+function toggleFaseFields() {
+  const fase = document.getElementById('parFase').value;
+  document.getElementById('parJornadaField').style.display = fase === 'Grupos' ? '' : 'none';
+}
+
+/* ── Eventos del partido (goles, tarjetas, asistencias) ── */
+const EVENTO_ICON = { Gol: '⚽', Autogol: '⚽ (autogol)', Asistencia: '🎯', Amarilla: '🟨', Roja: '🟥' };
+let parEventosState = [];
+
+function updateEventoTeamOptions() {
+  const localId = +document.getElementById('parLocal').value || 0;
+  const visitId = +document.getElementById('parVisit').value || 0;
+  const l = DC.getTeam(localId), v = DC.getTeam(visitId);
+  document.getElementById('evEquipo').innerHTML = [
+    l ? `<option value="${l.id}">${l.emoji} ${l.name} (Local)</option>` : '',
+    v ? `<option value="${v.id}">${v.emoji} ${v.name} (Visitante)</option>` : '',
+  ].join('');
+  updateEventoPlayerOptions();
+}
+
+function updateEventoPlayerOptions() {
+  const tipo = document.getElementById('evTipo').value;
+  const equipoId = +document.getElementById('evEquipo').value || 0;
+  const jugadores = tipo === 'Autogol'
+    ? DC.players.filter(p => p.team != equipoId) // el autogol lo mete un jugador del equipo contrario a quien se lo anotan
+    : DC.getTeamPlayers(equipoId);
+  document.getElementById('evJugador').innerHTML = '<option value="">Sin especificar</option>' +
+    jugadores.map(p => `<option value="${p.id}">${p.emoji || '⚽'} ${p.name}</option>`).join('');
+}
+
+function renderEventosList() {
+  const el = document.getElementById('eventosList');
+  if (!parEventosState.length) {
+    el.innerHTML = '<div style="font-size:0.75rem;color:var(--gray-dark);">Sin eventos registrados todavía.</div>';
+    return;
+  }
+  const sorted = [...parEventosState].sort((a, b) => (a.minuto || 0) - (b.minuto || 0));
+  el.innerHTML = sorted.map(ev => {
+    const idx = parEventosState.indexOf(ev);
+    const equipo = DC.getTeam(ev.equipo);
+    const jugador = ev.jugador ? DC.getPlayer(ev.jugador) : null;
+    return `
+      <div style="display:flex;align-items:center;gap:10px;background:var(--navy-mid);border:1px solid var(--glass-border);border-radius:var(--radius-sm);padding:8px 12px;font-size:0.78rem;">
+        <span style="color:var(--gold);font-weight:700;min-width:34px;">${ev.minuto != null ? ev.minuto + "'" : '—'}</span>
+        <span>${EVENTO_ICON[ev.tipo] || ev.tipo}</span>
+        <span style="flex:1;color:var(--white);">
+          ${jugador ? jugador.name : 'Sin jugador'}
+          ${equipo ? `<span style="color:var(--gray);"> · ${equipo.short || equipo.name}</span>` : ''}
+          ${ev.nota ? `<span style="color:var(--gray);"> · ${ev.nota}</span>` : ''}
+        </span>
+        <button type="button" class="btn-del" onclick="removeEvento(${idx})">🗑️</button>
+      </div>`;
+  }).join('');
+}
+
+function addEvento() {
+  const minutoVal = document.getElementById('evMinuto').value;
+  const tipo      = document.getElementById('evTipo').value;
+  const equipo    = +document.getElementById('evEquipo').value || null;
+  const jugadorVal = document.getElementById('evJugador').value;
+  const nota      = document.getElementById('evNota').value.trim();
+
+  if (!equipo) { showToast('Selecciona el equipo local/visitante antes de agregar eventos'); return; }
+
+  parEventosState.push({
+    tipo,
+    minuto: minutoVal !== '' ? +minutoVal : null,
+    equipo,
+    jugador: jugadorVal ? +jugadorVal : null,
+    nota: nota || null,
+  });
+
+  document.getElementById('evMinuto').value = '';
+  document.getElementById('evNota').value = '';
+  renderEventosList();
+}
+
+function removeEvento(idx) {
+  parEventosState.splice(idx, 1);
+  renderEventosList();
+}
+
+const FASE_BADGE_COLOR = {
+  'Grupos': 'badge-scheduled',
+  'Octavos de Final': 'badge-gold',
+  'Cuartos de Final': 'badge-gold',
+  'Semifinal': 'badge-gold',
+  'Tercer Lugar': 'badge-gold',
+  'Final': 'badge-finished',
+};
+
+function renderPartidosTable() {
+  const list = [...DC.matches].sort((a,b) =>
+    (a.fase||'Grupos').localeCompare(b.fase||'Grupos') || (a.jornada||0) - (b.jornada||0) || a.fecha.localeCompare(b.fecha));
+  document.getElementById('partidosCount').textContent = `${list.length} partido${list.length !== 1 ? 's' : ''} registrado${list.length !== 1 ? 's' : ''}`;
+  document.getElementById('partidosTbody').innerHTML = list.map(m => {
+    const l = DC.getTeam(m.local), v = DC.getTeam(m.visit);
+    const fase = m.fase || 'Grupos';
+    return `
+      <tr>
+        <td><span class="badge badge-scheduled">${fase === 'Grupos' ? 'J'+m.jornada : '—'}</span></td>
+        <td><span class="badge ${FASE_BADGE_COLOR[fase] || 'badge-scheduled'}">${fase}</span></td>
+        <td style="color:var(--white);font-weight:600;">${l ? l.emoji+' '+l.name : '?'}</td>
+        <td style="font-family:var(--font-display);color:var(--gold);">${m.estado==='Finalizado' ? m.gL+' — '+m.gV : 'vs'}</td>
+        <td style="color:var(--white);font-weight:600;">${v ? v.emoji+' '+v.name : '?'}</td>
+        <td style="color:var(--gray);font-size:0.8rem;">${m.fecha}</td>
+        <td style="color:var(--gray);font-size:0.8rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.cancha}</td>
+        <td><span class="badge badge-${m.estado==='Finalizado'?'finished':'scheduled'}">${m.estado}</span></td>
+        <td>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn-edit" onclick="openPartidoModal(${m.id})">✏️</button>
+            <a class="btn-edit" href="partido-detalle.html?id=${m.id}" target="_blank" style="text-decoration:none;display:inline-flex;align-items:center;">👁️ Ver</a>
+            ${m.estado==='Programado' ? `<button class="btn-result" onclick="openPartidoModal(${m.id}, true)">📊 Resultado</button>` : ''}
+            <button class="btn-del" onclick="confirmDelete('¿Eliminar este partido?', async () => { await DC.deleteMatch(${m.id}); renderPartidosTable(); showToast('Partido eliminado'); })">🗑️</button>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+function openPartidoModal(id, goToResult = false) {
+  document.getElementById('partidoModalTitle').textContent = id ? '✏️ Editar Partido' : '➕ Nuevo Partido';
+  const m = id ? DC.matches.find(x => x.id == id) : null;
+
+  // Equipos en selects
+  const teamOpts = DC.teams.map(t => `<option value="${t.id}">${t.emoji} ${t.name}</option>`).join('');
+  document.getElementById('parLocal').innerHTML = teamOpts;
+  document.getElementById('parVisit').innerHTML = teamOpts;
+
+  // MVP select — jugadores
+  document.getElementById('parMvp').innerHTML = '<option value="">Sin MVP</option>' +
+    DC.players.map(p => `<option value="${p.id}">${p.emoji} ${p.name}</option>`).join('');
+
+  document.getElementById('parId').value       = m?.id      || '';
+  document.getElementById('parFase').value     = m?.fase    || 'Grupos';
+  document.getElementById('parJornada').value  = m?.jornada || '';
+  document.getElementById('parLocal').value    = m?.local   || DC.teams[0]?.id || '';
+  document.getElementById('parVisit').value    = m?.visit   || DC.teams[1]?.id || '';
+  document.getElementById('parFecha').value    = m?.fecha   || '';
+  document.getElementById('parHora').value     = m?.hora    || '16:00';
+  document.getElementById('parCancha').value   = m?.cancha  || '';
+  document.getElementById('parEstado').value   = (goToResult || m?.estado === 'Finalizado') ? 'Finalizado' : 'Programado';
+  document.getElementById('parGL').value       = m?.gL ?? 0;
+  document.getElementById('parGV').value       = m?.gV ?? 0;
+  document.getElementById('parMvp').value      = m?.mvp || '';
+  toggleResultFields();
+  toggleFaseFields();
+
+  parEventosState = m?.eventos ? m.eventos.map(e => ({ ...e })) : [];
+  document.getElementById('evMinuto').value = '';
+  document.getElementById('evNota').value = '';
+  updateEventoTeamOptions();
+  renderEventosList();
+
+  openModal('partidoModal');
+}
+
+async function savePartido() {
+  const id      = document.getElementById('parId').value;
+  const fase    = document.getElementById('parFase').value;
+  const jornada = fase === 'Grupos' ? +document.getElementById('parJornada').value : null;
+  const local   = +document.getElementById('parLocal').value;
+  const visit   = +document.getElementById('parVisit').value;
+  const fecha   = document.getElementById('parFecha').value;
+  const hora    = document.getElementById('parHora').value;
+  const cancha  = document.getElementById('parCancha').value.trim();
+  const estado  = document.getElementById('parEstado').value;
+  const gL      = estado === 'Finalizado' ? +document.getElementById('parGL').value : null;
+  const gV      = estado === 'Finalizado' ? +document.getElementById('parGV').value : null;
+  const mvpVal  = document.getElementById('parMvp').value;
+  const mvp     = estado === 'Finalizado' && mvpVal ? +mvpVal : null;
+
+  if (fase === 'Grupos' && !jornada) { showToast('La jornada es obligatoria en fase de grupos'); return; }
+  if (!local || !visit || !fecha) { showToast('Completa los campos obligatorios'); return; }
+  if (local === visit) { showToast('Los equipos no pueden ser iguales'); return; }
+
+  const eventos = estado === 'Finalizado' ? parEventosState : [];
+  const match = { id: id ? +id : undefined, fase, jornada, local, visit, fecha, hora, cancha: cancha || 'Estadio Municipal', estado, gL, gV, mvp, eventos };
+  try {
+    await DC.saveMatch(match);
+    closeModal('partidoModal');
+    renderPartidosTable();
+    showToast(id ? '✅ Partido actualizado' : '✅ Partido registrado');
+  } catch (e) {
+    showToast('⚠️ ' + e.message);
+  }
+}
+
+/* ── NOTICIAS ── */
+function renderNoticiasTable() {
+  const list = DC.news;
+  document.getElementById('noticiasCount').textContent = `${list.length} noticia${list.length !== 1 ? 's' : ''} publicada${list.length !== 1 ? 's' : ''}`;
+  document.getElementById('noticiasTbody').innerHTML = list.map(n => `
+    <tr>
+      <td style="font-size:1.5rem;">${n.emoji}</td>
+      <td style="font-weight:700;color:var(--white);max-width:280px;">${n.title}</td>
+      <td><span class="badge badge-gold">${n.cat}</span></td>
+      <td style="color:var(--gray);font-size:0.8rem;">${n.date}</td>
+      <td>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-edit" onclick="openNoticiaModal(${n.id})">✏️ Editar</button>
+          <button class="btn-del" onclick="confirmDelete('¿Eliminar noticia «${n.title.slice(0,30)}…»?', async () => { await DC.deleteNews(${n.id}); renderNoticiasTable(); showToast('Noticia eliminada'); })">🗑️</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function openNoticiaModal(id) {
+  document.getElementById('noticiaModalTitle').textContent = id ? '✏️ Editar Noticia' : '➕ Nueva Noticia';
+  const n = id ? DC.news.find(x => x.id == id) : null;
+  document.getElementById('notId').value      = n?.id      || '';
+  document.getElementById('notEmoji').value   = n?.emoji   || '📰';
+  document.getElementById('notTitle').value   = n?.title   || '';
+  document.getElementById('notCat').value     = n?.cat     || 'Resultados';
+  document.getElementById('notDate').value    = n?.date    || new Date().toISOString().slice(0,10);
+  document.getElementById('notExcerpt').value = n?.excerpt || '';
+  openModal('noticiaModal');
+}
+
+async function saveNoticia() {
+  const id    = document.getElementById('notId').value;
+  const title = document.getElementById('notTitle').value.trim();
+  if (!title) { showToast('El título es obligatorio'); return; }
+  const item = {
+    id:      id ? +id : undefined,
+    emoji:   document.getElementById('notEmoji').value.trim()   || '📰',
+    title,
+    cat:     document.getElementById('notCat').value,
+    date:    document.getElementById('notDate').value,
+    excerpt: document.getElementById('notExcerpt').value.trim(),
+  };
+  try {
+    await DC.saveNews(item);
+    closeModal('noticiaModal');
+    renderNoticiasTable();
+    showToast(id ? '✅ Noticia actualizada' : '✅ Noticia publicada');
+  } catch (e) {
+    showToast('⚠️ ' + e.message);
+  }
+}
+
+/* ── Reset ── */
+function resetData() {
+  confirmDelete('¿Recargar todos los datos desde la base de datos? Se perderán los cambios sin guardar.', async () => {
+    await DC.reset();
+    renderDashboard();
+    showToast('✅ Datos recargados desde la base de datos');
+  });
+}
+
+/* ── Init ── */
+function initAdmin() {
+  renderDashboard();
+}
+</script>
+</body>
+</html>

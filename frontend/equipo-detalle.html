@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perfil del Equipo — DIMA CUP 2025</title>
+  <link rel="stylesheet" href="css/global.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .team-banner {
+      height: 320px; position: relative; overflow: hidden;
+      display: flex; align-items: flex-end; padding-bottom: 40px;
+      background: linear-gradient(135deg, var(--navy-mid), var(--navy));
+    }
+    .team-banner::before {
+      content:''; position:absolute; inset:0;
+      background: radial-gradient(ellipse at 60% 50%, rgba(255,255,255,0.2) 0%, transparent 70%);
+    }
+    .team-banner .stripe {
+      position:absolute; top:0; right:0; bottom:0; width:45%;
+      clip-path: polygon(18% 0,100% 0,100% 100%,0 100%);
+      background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(212,212,212,0.06));
+    }
+    .team-header { display:flex; align-items:flex-end; gap:28px; position:relative; z-index:1; }
+    .team-crest { font-size:6rem; line-height:1; width:140px; height:140px; display:flex; align-items:center; justify-content:center; border-radius:var(--radius-lg); flex-shrink:0; }
+    .team-meta-name { font-family:var(--font-display); font-size:clamp(2.5rem,6vw,5rem); letter-spacing:4px; color:var(--white); line-height:1; }
+    .team-meta-sub { color:var(--gray); font-size:0.85rem; margin-top:6px; }
+
+    .stats-strip { display: flex; flex-wrap: wrap; }
+    .stat-strip-item { padding: 18px 28px; text-align: center; flex: 1; border-right: 1px solid var(--glass-border); min-width: 90px; }
+    .stat-strip-item:last-child { border-right: none; }
+
+    .roster-row { display:flex; align-items:center; gap:16px; padding:14px 20px; }
+    .roster-num { font-family:var(--font-display); font-size:1.5rem; color:var(--gray-dark); width:36px; flex-shrink:0; }
+
+    @media (max-width: 640px) {
+      .team-banner { height: 230px; padding-bottom: 24px; }
+      .team-header { gap: 16px; }
+      .team-crest { width: 90px; height: 90px; font-size: 3.2rem; }
+      .stat-strip-item { padding: 14px 10px; min-width: 70px; flex-basis: 25%; }
+      .roster-row { gap: 10px; padding: 12px 14px; }
+      .roster-num { width: 24px; font-size: 1.2rem; }
+    }
+    @media (max-width: 420px) {
+      .team-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+      .team-crest { width: 76px; height: 76px; font-size: 2.6rem; }
+      .stat-strip-item { flex-basis: 33.33%; padding: 12px 6px; }
+      .roster-row { flex-wrap: wrap; }
+      .roster-row .roster-stats { margin-left: auto; }
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+  <div id="teamBanner" class="team-banner">
+    <div class="stripe"></div>
+    <div class="container">
+      <div class="breadcrumb" style="margin-bottom:12px;">
+        <a href="index.html">Inicio</a> / <a href="equipos.html">Equipos</a> / <span id="bannerName">Cargando...</span>
+      </div>
+      <div class="team-header">
+        <div class="team-crest" id="teamCrest">⚽</div>
+        <div>
+          <div class="team-meta-name" id="teamName">—</div>
+          <div class="team-meta-sub" id="teamSub">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats strip -->
+  <div style="background:var(--navy-mid);border-bottom:1px solid var(--glass-border);">
+    <div class="container">
+      <div id="statsStrip" class="stats-strip"></div>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container">
+      <div style="display:grid;grid-template-columns:1fr 360px;gap:40px;align-items:start;" class="detail-layout">
+
+        <!-- Left: Plantilla + Partidos -->
+        <div>
+          <div class="section-header">
+            <div class="accent-bar"></div>
+            <h2>Plantilla</h2>
+          </div>
+          <div id="roster" style="display:flex;flex-direction:column;gap:8px;"></div>
+
+          <div class="section-header" style="margin-top:56px;">
+            <div class="accent-bar"></div>
+            <h2>Últimos Partidos</h2>
+          </div>
+          <div id="teamMatches" style="display:flex;flex-direction:column;gap:10px;"></div>
+        </div>
+
+        <!-- Right: Chart + Goleadores -->
+        <div>
+          <div class="card" style="padding:24px;margin-bottom:24px;">
+            <div style="font-size:0.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin-bottom:16px;">Rendimiento (Últimas 5 Jornadas)</div>
+            <canvas id="performanceChart" height="200"></canvas>
+          </div>
+          <div class="card" style="padding:24px;">
+            <div style="font-size:0.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin-bottom:16px;">⚽ Goleadores del equipo</div>
+            <div id="teamScorers"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+<script src="js/shared.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  await DC.ready;
+  const params = new URLSearchParams(window.location.search);
+  const id = parseInt(params.get('id')) || 1;
+  const team = DC.getTeam(id);
+  if (!team) { document.getElementById('teamName').textContent = 'Equipo no encontrado'; return; }
+
+  document.title = `${team.name} — DIMA CUP 2025`;
+  document.getElementById('bannerName').textContent = team.name;
+  document.getElementById('teamCrest').innerHTML = DC.crest(team, 'fill');
+  document.getElementById('teamName').textContent = team.name;
+  document.getElementById('teamSub').innerHTML = `📍 ${team.city} &nbsp;·&nbsp; ${team.cat} &nbsp;·&nbsp; Jornada ${team.pj} disputada${team.pj!==1?'s':''}`;
+
+  // Colores del equipo — personalizan el banner, el escudo y los acentos de la ficha
+  const c1 = team.color1 || '#FFFFFF';
+  const c2 = team.color2 || '#D4D4D4';
+  document.getElementById('teamBanner').style.background =
+    `radial-gradient(ellipse at 60% 40%, ${c1}33 0%, transparent 65%), linear-gradient(135deg, var(--navy-mid), var(--navy))`;
+  document.getElementById('teamCrest').style.background = `linear-gradient(135deg, ${c1}22, ${c2}18)`;
+  document.getElementById('teamCrest').style.border = `2px solid ${c1}55`;
+  document.documentElement.style.setProperty('--team-c1', c1);
+  document.documentElement.style.setProperty('--team-c2', c2);
+  const stripeEl = document.querySelector('#teamBanner .stripe');
+  if (stripeEl) stripeEl.style.background = `linear-gradient(135deg, ${c1}22, ${c2}14)`;
+
+  // Stats strip
+  const dg = team.gf - team.gc;
+  const stats = [
+    ['PJ', team.pj], ['PG', team.pg], ['PE', team.pe], ['PP', team.pp],
+    ['GF', team.gf], ['GC', team.gc], ['DG', (dg>0?'+':'')+dg], ['PTS', team.pts]
+  ];
+  document.getElementById('statsStrip').innerHTML = stats.map(([l,v]) => `
+    <div class="stat-strip-item">
+      <div style="font-family:var(--font-display);font-size:1.8rem;color:${l==='PTS'?'var(--gold)':l==='DG'&&dg<0?'var(--danger)':l==='DG'&&dg>0?'var(--success)':'var(--white)'};">${v}</div>
+      <div style="font-size:0.6rem;color:var(--gray);letter-spacing:2px;">${l}</div>
+    </div>`).join('');
+
+  // Roster
+  const players = DC.getTeamPlayers(id);
+  document.getElementById('roster').innerHTML = players.map(p => `
+    <a href="jugador-detalle.html?id=${p.id}" class="roster-row" style="text-decoration:none;background:var(--navy-card);border:1px solid var(--glass-border);border-radius:var(--radius-md);transition:all var(--transition);" onmouseenter="this.style.borderColor='${c1}66'" onmouseleave="this.style.borderColor='var(--glass-border)'">
+      <div class="roster-num">${p.num}</div>
+      <div style="font-size:1.5rem;">${DC.avatar(p, 28)}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:700;color:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</div>
+        <div style="font-size:0.7rem;color:var(--gray);">${p.pos}</div>
+      </div>
+      <div class="roster-stats" style="display:flex;gap:16px;text-align:center;flex-shrink:0;">
+        <div><div style="font-weight:700;color:var(--gold);">${p.goles}</div><div style="font-size:0.6rem;color:var(--gray);">⚽</div></div>
+        <div><div style="font-weight:700;color:var(--white);">${p.asist}</div><div style="font-size:0.6rem;color:var(--gray);">🎯</div></div>
+      </div>
+    </a>`).join('') || '<p style="color:var(--gray);">Sin jugadores registrados.</p>';
+
+  // Matches
+  const matches = DC.getTeamMatches(id).slice(-5).reverse();
+  document.getElementById('teamMatches').innerHTML = matches.map(m => {
+    const l = DC.getTeam(m.local), v = DC.getTeam(m.visit);
+    const isLocal = m.local === id;
+    return `
+      <div class="match-card" style="cursor:pointer;" onclick="location.href='partido-detalle.html?id=${m.id}'">
+        <div class="match-team">
+          <div class="team-shield">${DC.crest(l, 'fill')}</div>
+          <div><div class="team-name">${l.name}</div><div class="team-short" style="font-size:0.65rem;color:var(--gray);">Local</div></div>
+        </div>
+        <div class="match-score">
+          ${m.estado==='Finalizado'
+            ? `<div class="score-display">${m.gL} — ${m.gV}</div>`
+            : `<div style="font-family:var(--font-display);font-size:1rem;color:var(--gray);">VS</div>`}
+          <div class="score-time">J${m.jornada} · ${m.fecha}</div>
+          <span class="badge badge-${m.estado==='Finalizado'?'finished':'scheduled'}" style="margin-top:4px;">${m.estado}</span>
+        </div>
+        <div class="match-team away">
+          <div class="team-shield">${DC.crest(v, 'fill')}</div>
+          <div style="text-align:right;"><div class="team-name">${v.name}</div><div class="team-short" style="font-size:0.65rem;color:var(--gray);">Visitante</div></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Team scorers
+  document.getElementById('teamScorers').innerHTML = players
+    .filter(p => p.goles > 0)
+    .sort((a,b)=>b.goles-a.goles)
+    .map((p,i) => `
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--glass-border);">
+        <div style="color:${i===0?'var(--gold)':'var(--gray)'};font-weight:700;width:16px;">${i+1}</div>
+        <div style="flex:1;font-size:0.85rem;color:var(--white);">${p.name}</div>
+        <div style="font-family:var(--font-display);font-size:1.3rem;color:var(--gold);">${p.goles}</div>
+      </div>`).join('') || '<p style="color:var(--gray);font-size:0.85rem;">Sin goles registrados.</p>';
+
+  // Performance chart
+  const ctx = document.getElementById('performanceChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['J1','J2','J3','J4','J5'],
+      datasets: [{
+        label: 'Puntos', data: [3,6,9,10,13],
+        borderColor: c1, backgroundColor: c1 + '1a',
+        tension: 0.4, fill: true, pointBackgroundColor: c2, pointRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#999999' } },
+        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#999999' } }
+      }
+    }
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: dimacup-api
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB
+        value: dimacup
+      - key: ALLOWED_ORIGINS
+        value: "*"

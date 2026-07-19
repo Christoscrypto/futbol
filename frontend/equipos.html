@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Equipos — DIMA CUP 2025</title>
+  <meta name="description" content="Todos los equipos participantes del DIMA CUP 2025">
+  <link rel="stylesheet" href="css/global.css">
+</head>
+<body>
+<div class="page-wrapper">
+
+  <div class="page-banner">
+    <div class="diagonal-stripe"></div>
+    <div class="container">
+      <div class="breadcrumb"><a href="index.html">Inicio</a> / Equipos</div>
+      <h1>Equipos</h1>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container">
+      <div class="filter-bar fade-up">
+        <div class="filter-group" style="flex:2;">
+          <label>Buscar equipo</label>
+          <input type="text" class="input" id="searchTeam" placeholder="Nombre del equipo o ciudad...">
+        </div>
+        <div class="filter-group">
+          <label>Categoría</label>
+          <select class="select" id="filterCat">
+            <option value="">Todas</option>
+            <option value="Premier">Premier</option>
+            <option value="División A">División A</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Ordenar por</label>
+          <select class="select" id="sortTeams">
+            <option value="pts">Puntos</option>
+            <option value="gf">Goles a favor</option>
+            <option value="name">Nombre</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="renderTeams()">Filtrar</button>
+      </div>
+
+      <div id="teamsCount" style="color:var(--gray);font-size:0.8rem;margin-bottom:20px;"></div>
+      <div id="teamsGrid" class="grid-3"></div>
+    </div>
+  </section>
+
+</div>
+<script src="js/shared.js"></script>
+<script>
+function renderTeams() {
+  const search = document.getElementById('searchTeam').value.toLowerCase();
+  const cat = document.getElementById('filterCat').value;
+  const sort = document.getElementById('sortTeams').value;
+
+  let teams = [...DC.teams];
+  if (search) teams = teams.filter(t => t.name.toLowerCase().includes(search) || t.city.toLowerCase().includes(search));
+  if (cat) teams = teams.filter(t => t.cat === cat);
+
+  if (sort === 'pts') teams.sort((a,b) => b.pts - a.pts);
+  else if (sort === 'gf') teams.sort((a,b) => b.gf - a.gf);
+  else teams.sort((a,b) => a.name.localeCompare(b.name));
+
+  document.getElementById('teamsCount').textContent = `${teams.length} equipo${teams.length !== 1 ? 's' : ''} encontrado${teams.length !== 1 ? 's' : ''}`;
+
+  const pos = DC.teams.slice().sort((a,b)=>b.pts-a.pts);
+
+  document.getElementById('teamsGrid').innerHTML = teams.map((t,_i) => {
+    const rank = pos.findIndex(x => x.id === t.id) + 1;
+    const dg = t.gf - t.gc;
+    const form = ['W','W','D','W','L'].slice(0,5);
+    return `
+      <a href="equipo-detalle.html?id=${t.id}" class="card card-glow fade-up" style="text-decoration:none;padding:28px;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,${t.color1||'#FFFFFF'},${t.color2||'#D4D4D4'});"></div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+          <div style="font-size:4rem;line-height:1;">${DC.crest(t, 64)}</div>
+          <div style="text-align:right;">
+            <div style="font-family:var(--font-display);font-size:2.5rem;color:${rank<=2?'var(--gold)':'var(--white)'};letter-spacing:1px;">#${rank}</div>
+            <span class="badge ${t.cat==='Premier'?'badge-gold':'badge-scheduled'}">${t.cat}</span>
+          </div>
+        </div>
+        <div style="font-family:var(--font-display);font-size:1.5rem;letter-spacing:2px;color:var(--white);margin-bottom:4px;">${t.name}</div>
+        <div style="font-size:0.75rem;color:var(--gray);margin-bottom:20px;">📍 ${t.city}</div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:20px;text-align:center;">
+          ${[['PJ',t.pj],['PG',t.pg],['PE',t.pe],['PP',t.pp],['PTS',t.pts]].map(([l,v])=>`
+            <div style="background:var(--navy-mid);border-radius:var(--radius-sm);padding:8px 4px;">
+              <div style="font-family:var(--font-display);font-size:1.1rem;color:${l==='PTS'?'var(--gold)':'var(--white)'};">${v}</div>
+              <div style="font-size:0.55rem;color:var(--gray);letter-spacing:1px;">${l}</div>
+            </div>`).join('')}
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-top:16px;border-top:1px solid var(--glass-border);">
+          <div style="font-size:0.7rem;color:var(--gray);">GF: <span style="color:var(--white);">${t.gf}</span> &nbsp; GC: <span style="color:var(--white);">${t.gc}</span> &nbsp; DG: <span style="color:${dg>0?'var(--success)':dg<0?'var(--danger)':'var(--gray)'};">${dg>0?'+':''}${dg}</span></div>
+          <span style="color:var(--electric);font-size:0.75rem;font-weight:600;">Ver perfil →</span>
+        </div>
+      </a>`;
+  }).join('');
+  setTimeout(initScrollReveal, 100);
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await DC.ready;
+  renderTeams();
+  document.getElementById('searchTeam').addEventListener('input', renderTeams);
+  document.getElementById('filterCat').addEventListener('change', renderTeams);
+  document.getElementById('sortTeams').addEventListener('change', renderTeams);
+});
+</script>
+</body>
+</html>

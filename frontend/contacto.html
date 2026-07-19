@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contacto — Torneo CUP 2025</title>
+  <link rel="stylesheet" href="css/global.css">
+  <style>
+    .contact-card {
+      background: var(--navy-card); border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg); padding: 32px; text-align: center;
+      transition: all var(--transition);
+    }
+    .contact-card:hover { border-color: rgba(255,255,255,0.3); transform: translateY(-4px); }
+    .contact-icon { font-size: 2.5rem; margin-bottom: 16px; }
+    .contact-card h3 { font-size: 0.75rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--gray); margin-bottom: 8px; }
+    .contact-card p { color: var(--white); font-size: 0.9rem; font-weight: 600; }
+    .form-card {
+      background: var(--navy-card); border: 1px solid var(--glass-border);
+      border-radius: var(--radius-xl); padding: 48px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+    .form-group label { font-size: 0.7rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gray); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+    .form-success {
+      background: rgba(0,210,106,0.1); border: 1px solid rgba(0,210,106,0.3);
+      border-radius: var(--radius-md); padding: 20px; text-align: center;
+      color: var(--success); font-weight: 600;
+      display: none;
+    }
+    @media (max-width: 640px) {
+      .form-card { padding: 24px; }
+      .contact-card { padding: 22px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+  <div class="page-banner">
+    <div class="diagonal-stripe"></div>
+    <div class="container">
+      <div class="breadcrumb"><a href="index.html">Inicio</a> / Contacto</div>
+      <h1>Contacto</h1>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container">
+      <!-- Contact info cards -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:64px;" class="fade-up">
+        <div class="contact-card">
+          <div class="contact-icon">📍</div>
+          <h3>Ubicación</h3>
+          <p>Durango, Dgo.<br>México</p>
+        </div>
+        <div class="contact-card">
+          <div class="contact-icon">📱</div>
+          <h3>WhatsApp</h3>
+          <p>+52 618 000 0000</p>
+        </div>
+        <div class="contact-card">
+          <div class="contact-icon">📧</div>
+          <h3>Email</h3>
+          <p>info@dtorneocup.mx</p>
+        </div>
+        <div class="contact-card">
+          <div class="contact-icon">📸</div>
+          <h3>Instagram</h3>
+          <p>@dtorneocup_oficial</p>
+        </div>
+        <div class="contact-card">
+          <div class="contact-icon">📘</div>
+          <h3>Facebook</h3>
+          <p>/torneocup</p>
+        </div>
+      </div>
+
+      <!-- Inscription form -->
+      <div style="display:grid;grid-template-columns:1fr 420px;gap:48px;align-items:start;" class="detail-layout">
+        <div class="fade-up">
+          <div class="accent-bar"></div>
+          <div style="font-size:0.65rem;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--electric);margin-bottom:8px;">Inscripciones Abiertas</div>
+          <h2 style="font-family:var(--font-display);font-size:clamp(2rem,4vw,3.5rem);letter-spacing:3px;color:var(--white);margin-bottom:20px;">Inscribe tu equipo</h2>
+          <p style="color:var(--gray);line-height:1.9;margin-bottom:32px;">
+            ¿Tienes un equipo que quiere competir en el Torneo 2026? Llena el formulario y nos pondremos en contacto contigo para darte toda la información necesaria sobre cuotas, fechas y reglamento.
+          </p>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div style="display:flex;align-items:center;gap:12px;color:var(--gray);font-size:0.85rem;">
+              <span style="color:var(--electric);">✓</span> Mínimo 14 jugadores registrados
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;color:var(--gray);font-size:0.85rem;">
+              <span style="color:var(--electric);">✓</span> Cuota de inscripción accesible
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;color:var(--gray);font-size:0.85rem;">
+              <span style="color:var(--electric);">✓</span> Partidos en canchas de pasto natural
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;color:var(--gray);font-size:0.85rem;">
+              <span style="color:var(--electric);">✓</span> Trofeos y premios para los finalistas
+            </div>
+          </div>
+        </div>
+
+        <div class="form-card fade-up">
+          <div style="margin-bottom:28px;">
+            <div style="font-family:var(--font-display);font-size:1.5rem;letter-spacing:2px;color:var(--white);margin-bottom:4px;">Formulario de Inscripción</div>
+            <div style="font-size:0.75rem;color:var(--gray);">Tu solicitud se enviará directo a nuestro WhatsApp</div>
+          </div>
+
+          <div id="inscriptionForm">
+            <div class="form-group">
+              <label>Nombre del equipo *</label>
+              <input type="text" class="input" id="teamNameF" placeholder="Ej. Los Guerreros FC" required>
+            </div>
+            <div class="form-group">
+              <label>Nombre del representante *</label>
+              <input type="text" class="input" id="repName" placeholder="Tu nombre completo" required>
+            </div>
+            <div class="form-group">
+              <label>Teléfono / WhatsApp *</label>
+              <input type="tel" class="input" id="phone" placeholder="+52 618 000 0000" required>
+            </div>
+            <div class="form-group">
+              <label>Categoría de interés</label>
+              <select class="select" id="categoria">
+                <option value="">Seleccionar categoría</option>
+                <option value="Premier">Premier</option>
+                <option value="División A">División A</option>
+                <option value="Veteranos">Veteranos</option>
+              </select>
+            </div>
+            <button class="btn btn-gold" style="width:100%;justify-content:center;" onclick="submitForm()">
+              📲 Enviar inscripción por WhatsApp
+            </button>
+            <p style="font-size:0.7rem;color:var(--gray);text-align:center;margin-top:12px;">Se abrirá WhatsApp con tu solicitud ya redactada, lista para enviar</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+<script src="js/shared.js"></script>
+<script>
+/* Número de WhatsApp del torneo (formato internacional, solo dígitos, sin "+") */
+const WHATSAPP_NUMBER = '5216180000000';
+
+function submitForm() {
+  const required = ['teamNameF', 'repName', 'phone'];
+  let valid = true;
+  required.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el.value.trim()) {
+      el.style.borderColor = 'var(--danger)';
+      valid = false;
+      setTimeout(() => el.style.borderColor = '', 2000);
+    }
+  });
+  if (!valid) { showToast('Por favor completa los campos requeridos (*)'); return; }
+
+  const teamName  = document.getElementById('teamNameF').value.trim();
+  const repName   = document.getElementById('repName').value.trim();
+  const phone     = document.getElementById('phone').value.trim();
+  const categoria = document.getElementById('categoria').value;
+
+  const lines = [
+    '¡Hola! Quiero inscribir un equipo al *DIMA CUP 2025* ⚽',
+    '',
+    `*Equipo:* ${teamName}`,
+    `*Representante:* ${repName}`,
+    `*Teléfono:* ${phone}`,
+  ];
+  if (categoria) lines.push(`*Categoría:* ${categoria}`);
+
+  const mensaje = encodeURIComponent(lines.join('\n'));
+  const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${mensaje}`;
+
+  showToast('Abriendo WhatsApp…');
+  window.open(url, '_blank');
+}
+document.addEventListener('DOMContentLoaded', () => setTimeout(initScrollReveal, 100));
+</script>
+</body>
+</html>

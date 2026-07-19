@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jugadores — DIMA CUP 2025</title>
+  <link rel="stylesheet" href="css/global.css">
+</head>
+<body>
+<div class="page-wrapper">
+  <div class="page-banner">
+    <div class="diagonal-stripe"></div>
+    <div class="container">
+      <div class="breadcrumb"><a href="index.html">Inicio</a> / Jugadores</div>
+      <h1>Jugadores</h1>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container">
+      <div class="filter-bar fade-up">
+        <div class="filter-group" style="flex:2;">
+          <label>Buscar jugador</label>
+          <input type="text" class="input" id="searchPlayer" placeholder="Nombre del jugador...">
+        </div>
+        <div class="filter-group">
+          <label>Equipo</label>
+          <select class="select" id="filterTeam"><option value="">Todos los equipos</option></select>
+        </div>
+        <div class="filter-group">
+          <label>Posición</label>
+          <select class="select" id="filterPos">
+            <option value="">Todas</option>
+            <option value="Portero">Portero</option>
+            <option value="Defensa">Defensa</option>
+            <option value="Mediocampista">Mediocampista</option>
+            <option value="Delantero">Delantero</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Ordenar</label>
+          <select class="select" id="sortPlayers">
+            <option value="goles">Goles</option>
+            <option value="asist">Asistencias</option>
+            <option value="name">Nombre</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="playersCount" style="color:var(--gray);font-size:0.8rem;margin-bottom:20px;"></div>
+      <div id="playersGrid" class="grid-4"></div>
+    </div>
+  </section>
+</div>
+<script src="js/shared.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  await DC.ready;
+  // Populate team filter
+  const sel = document.getElementById('filterTeam');
+  DC.teams.forEach(t => {
+    const o = document.createElement('option');
+    o.value = t.id; o.textContent = t.name;
+    sel.appendChild(o);
+  });
+
+  function render() {
+    const search = document.getElementById('searchPlayer').value.toLowerCase();
+    const teamF = document.getElementById('filterTeam').value;
+    const posF = document.getElementById('filterPos').value;
+    const sort = document.getElementById('sortPlayers').value;
+
+    let players = [...DC.players];
+    if (search) players = players.filter(p => p.name.toLowerCase().includes(search));
+    if (teamF) players = players.filter(p => p.team == teamF);
+    if (posF) players = players.filter(p => p.pos === posF);
+    if (sort === 'goles') players.sort((a,b)=>b.goles-a.goles);
+    else if (sort === 'asist') players.sort((a,b)=>b.asist-a.asist);
+    else players.sort((a,b)=>a.name.localeCompare(b.name));
+
+    document.getElementById('playersCount').textContent = `${players.length} jugador${players.length!==1?'es':''} encontrado${players.length!==1?'s':''}`;
+
+    document.getElementById('playersGrid').innerHTML = players.map(p => {
+      const team = DC.getTeam(p.team);
+      return `
+        <div class="player-card fade-up">
+          <div class="player-card-top">
+            ${p.img ? `<div class="player-card-bg" style="background-image:url('${p.img}');"></div>` : ''}
+            <div class="player-number">${p.num}</div>
+            <div class="player-avatar-wrap">
+              <div class="player-avatar">${DC.avatar(p, 'fill')}</div>
+              <div class="player-crest-badge">${DC.crest(team, 'fill')}</div>
+            </div>
+          </div>
+          <div class="player-card-body">
+            <div class="player-pos">${p.pos}${p.nacionalidad ? ' · ' + p.nacionalidad : ''}</div>
+            <div class="player-name">${p.name}</div>
+            <div style="font-size:0.7rem;color:var(--gray);margin-bottom:12px;">${team.name}</div>
+            <div class="player-stats-mini">
+              <div class="player-stat-mini"><div class="n">${p.goles}</div><div class="l">Goles</div></div>
+              <div class="player-stat-mini"><div class="n">${p.asist}</div><div class="l">Asist</div></div>
+              <div class="player-stat-mini"><div class="n">${p.amarillas}</div><div class="l">Amrl</div></div>
+            </div>
+            <a href="jugador-detalle.html?id=${p.id}" class="btn btn-outline btn-sm" style="width:100%;justify-content:center;">Ver perfil →</a>
+          </div>
+        </div>`;
+    }).join('');
+    setTimeout(initScrollReveal, 100);
+  }
+
+  render();
+  document.getElementById('searchPlayer').addEventListener('input', render);
+  document.getElementById('filterTeam').addEventListener('change', render);
+  document.getElementById('filterPos').addEventListener('change', render);
+  document.getElementById('sortPlayers').addEventListener('change', render);
+});
+</script>
+</body>
+</html>
